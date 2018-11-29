@@ -663,7 +663,7 @@ public class GridLabelRenderer {
         if (mStepsVerticalSecondScale != null) {
             mStepsVerticalSecondScale.clear();
         } else {
-            mStepsVerticalSecondScale = new LinkedHashMap<>(numVerticalLabels);
+            mStepsVerticalSecondScale = new LinkedHashMap<Integer, Double>(numVerticalLabels);
         }
 
         int height = mGraphView.getGraphContentHeight();
@@ -805,7 +805,7 @@ public class GridLabelRenderer {
         if (mStepsVertical != null) {
             mStepsVertical.clear();
         } else {
-            mStepsVertical = new LinkedHashMap<>((int) numVerticalLabels);
+            mStepsVertical = new LinkedHashMap<Integer, Double>((int) numVerticalLabels);
         }
 
         int height = mGraphView.getGraphContentHeight();
@@ -944,7 +944,7 @@ public class GridLabelRenderer {
         if (mStepsHorizontal != null) {
             mStepsHorizontal.clear();
         } else {
-            mStepsHorizontal = new LinkedHashMap<>((int) numHorizontalLabels);
+            mStepsHorizontal = new LinkedHashMap<Integer, Double>((int) numHorizontalLabels);
         }
 
         int width = mGraphView.getGraphContentWidth();

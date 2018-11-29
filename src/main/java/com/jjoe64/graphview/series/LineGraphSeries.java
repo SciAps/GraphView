@@ -20,7 +20,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.support.v4.view.ViewCompat;
 import android.view.animation.AccelerateInterpolator;
 
 import com.jjoe64.graphview.GraphView;
@@ -371,7 +370,7 @@ public class LineGraphSeries<E extends DataPointInterface> extends BaseSeries<E>
                                 startXAnimated = (startX - lastAnimationReferenceX) * factor + lastAnimationReferenceX;
                                 startXAnimated = Math.max(startXAnimated, lastAnimationReferenceX);
                                 endXAnimated = (endX - lastAnimationReferenceX) * factor + lastAnimationReferenceX;
-                                ViewCompat.postInvalidateOnAnimation(graphView);
+                                graphView.postInvalidate();
                             } else {
                                 // animation finished
                                 mLastAnimatedValue = valueX;
@@ -463,7 +462,7 @@ public class LineGraphSeries<E extends DataPointInterface> extends BaseSeries<E>
                         float factor = mAnimationInterpolator.getInterpolation(timeFactor);
                         if (timeFactor <= 1.0) {
                             first_X = (first_X - lastAnimationReferenceX) * factor + lastAnimationReferenceX;
-                            ViewCompat.postInvalidateOnAnimation(graphView);
+                            graphView.postInvalidate();
                         } else {
                             // animation finished
                             mLastAnimatedValue = valueX;

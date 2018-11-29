@@ -19,8 +19,6 @@ package com.jjoe64.graphview;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.widget.EdgeEffectCompat;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -242,7 +240,7 @@ public class Viewport {
             // adjustSteps viewport, labels, etc.
             mGraphView.onDataChanged(true, false);
 
-            ViewCompat.postInvalidateOnAnimation(mGraphView);
+            mGraphView.postInvalidate();
 
             return true;
         }
@@ -283,7 +281,7 @@ public class Viewport {
                 mOnXAxisBoundsChangedListener.onXAxisBoundsChanged(getMinX(false), getMaxX(false), OnXAxisBoundsChangedListener.Reason.SCALE);
             }
 
-            ViewCompat.postInvalidateOnAnimation(mGraphView);
+            mGraphView.postInvalidate();
         }
     };
 
@@ -305,7 +303,7 @@ public class Viewport {
             releaseEdgeEffects();
             // Aborts any active scroll animations and invalidates.
             mScroller.forceFinished(true);
-            ViewCompat.postInvalidateOnAnimation(mGraphView);
+            mGraphView.postInvalidate();
             return true;
         }
 
@@ -441,7 +439,7 @@ public class Viewport {
             // adjustSteps viewport, labels, etc.
             mGraphView.onDataChanged(true, false);
 
-            ViewCompat.postInvalidateOnAnimation(mGraphView);
+            mGraphView.postInvalidate();
             return true;
         }
 
@@ -732,7 +730,7 @@ public class Viewport {
      */
     public void calcCompleteRange() {
         List<Series> series = mGraphView.getSeries();
-        List<Series> seriesInclusiveSecondScale = new ArrayList<>(mGraphView.getSeries());
+        List<Series> seriesInclusiveSecondScale = new ArrayList<Series>(mGraphView.getSeries());
         if (mGraphView.mSecondScale != null) {
             seriesInclusiveSecondScale.addAll(mGraphView.mSecondScale.getSeries());
         }
@@ -954,7 +952,7 @@ public class Viewport {
                 0, maxY,
                 mGraphView.getGraphContentWidth() / 2,
                 mGraphView.getGraphContentHeight() / 2);
-        ViewCompat.postInvalidateOnAnimation(mGraphView);
+        mGraphView.postInvalidate();
     }
 
     /**
@@ -1018,7 +1016,7 @@ public class Viewport {
         }
 
         if (needsInvalidate) {
-            ViewCompat.postInvalidateOnAnimation(mGraphView);
+            mGraphView.postInvalidate();
         }
     }
 

@@ -100,7 +100,7 @@ public abstract class BaseSeries<E extends DataPointInterface> implements Series
      * creates series without data
      */
     public BaseSeries() {
-        mGraphViews = new ArrayList<>();
+        mGraphViews = new ArrayList<WeakReference<GraphView>>();
     }
 
     /**
@@ -110,7 +110,7 @@ public abstract class BaseSeries<E extends DataPointInterface> implements Series
      *              important: array has to be sorted from lowest x-value to the highest
      */
     public BaseSeries(E[] data) {
-        mGraphViews = new ArrayList<>();
+        mGraphViews = new ArrayList<WeakReference<GraphView>>();
         for (E d : data) {
             mData.add(d);
         }
@@ -428,7 +428,7 @@ public abstract class BaseSeries<E extends DataPointInterface> implements Series
      */
     @Override
     public void onGraphViewAttached(GraphView graphView) {
-        mGraphViews.add(new WeakReference<>(graphView));
+        mGraphViews.add(new WeakReference<GraphView>(graphView));
     }
 
     /**
