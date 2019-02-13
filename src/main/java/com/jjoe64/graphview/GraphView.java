@@ -31,10 +31,13 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.jjoe64.graphview.series.BaseSeries;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.Series;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -654,5 +657,63 @@ public class GraphView extends View {
 
     public boolean isCursorMode() {
         return mIsCursorMode;
+    }
+
+    /**
+     * Convert graph to logarithic scale instead of linear scale. This method will not
+     * work if there is no Series added.
+     */
+    public void toLogScale()
+    {
+        if (mSeries.isEmpty()) return;
+        double maxY = 0;
+        for (Series s : mSeries)
+        {
+            Iterator<DataPoint> iterator = s.getValues(s.getLowestValueX(), s.getHighestValueX());
+            ArrayList<DataPoint> dataPoints = new ArrayList<DataPoint>();
+            while (iterator.hasNext())
+            {
+                DataPoint currentPoint = iterator.next();
+                double currentY = currentPoint.getY();
+                if (currentY > maxY) maxY = currentY;
+                DataPoint temp = new DataPoint(currentPoint.getX(), Math.log10(currentY));
+                dataPoints.add(temp);
+            }
+            ((BaseSeries) s).resetData(toDataPointArray(dataPoints));
+        }
+        this.getViewport().setMaxY(Math.floor(Math.log10(maxY)));
+        this.getViewport().setMinY(0);
+        adjustAxisLabel();
+    }
+
+    private DataPoint[] toDataPointArray(ArrayList<DataPoint> points)
+    {
+        DataPoint[] dataPoints = new DataPoint[points.size()];
+        for (int j = 0; j < points.size(); j++)
+        {
+            dataPoints[j] = points.get(j);
+        }
+        return dataPoints;
+    }
+
+    private void adjustAxisLabel()
+    {
+        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                if (isValueX)
+                {
+                    return super.formatLabel(value, isValueX);
+                } else
+                {
+                    String yValue = super.formatLabel(value, isValueX).replaceAll(",", ".");
+                    if (yValue.compareToIgnoreCase("-∞") == 0) return "0";
+                    Float yLogValue = (float) Math.floor((Math.pow(10, Float.valueOf(yValue))));
+                    return (value <= 0) ? "-∞" : String.valueOf(yLogValue);
+                }
+            }
+        });
     }
 }
