@@ -124,7 +124,8 @@ public class CursorMode {
 
     protected String getTextForSeries(Series s, DataPointInterface value) {
         StringBuffer txt = new StringBuffer();
-        if (s.getTitle() != null) {
+        //You don't want to show the title in the cursor box if it is already visible on screen
+        if ( !this.mGraphView.getLegendRenderer().isVisible() && s.getTitle() != null) {
             txt.append(s.getTitle());
             txt.append(": ");
         }
