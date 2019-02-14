@@ -118,6 +118,10 @@ public class GraphView extends View {
     private List<Series> mSeries;
 
     /**
+     * A representation of mSeries, used exclusively for display log scale purpose
+     */
+    private List<Series> mLogSeries;
+    /**
      * the renderer for the grid and labels
      */
     private GridLabelRenderer mGridLabelRenderer;
@@ -168,6 +172,7 @@ public class GraphView extends View {
 
     private CursorMode mCursorMode;
 
+    private boolean mLogScaleMode;
     /**
      * Initialize the GraphView view
      * @param context
@@ -222,6 +227,8 @@ public class GraphView extends View {
         mTapDetector = new TapDetector();
 
         loadStyles();
+
+        mLogScaleMode = false;
     }
 
     /**
@@ -296,28 +303,42 @@ public class GraphView extends View {
      *
      * @param canvas
      */
-    protected void drawGraphElements(Canvas canvas) {
+    protected void drawGraphElements(Canvas canvas)
+    {
         // must be in hardware accelerated mode
-        if (android.os.Build.VERSION.SDK_INT >= 11 && !canvas.isHardwareAccelerated()) {
+        if (android.os.Build.VERSION.SDK_INT >= 11 && !canvas.isHardwareAccelerated())
+        {
             // just warn about it, because it is ok when making a snapshot
-            Log.w("GraphView", "GraphView should be used in hardware accelerated mode." +
-                    "You can use android:hardwareAccelerated=\"true\" on your activity. Read this for more info:" +
-                    "https://developer.android.com/guide/topics/graphics/hardware-accel.html");
+            Log.w("GraphView", "GraphView should be used in hardware accelerated mode." + "You can use android:hardwareAccelerated=\"true\" on your activity. Read this for more info:" + "https://developer.android.com/guide/topics/graphics/hardware-accel.html");
         }
 
         drawTitle(canvas);
         mViewport.drawFirst(canvas);
         mGridLabelRenderer.draw(canvas);
-        for (Series s : mSeries) {
-            s.draw(this, canvas, false);
+        if (this.isLogScaleMode())
+        {
+            for (Series s : mLogSeries)
+            {
+                s.draw(this, canvas, false);
+            }
+        } else
+        {
+            for (Series s : mSeries)
+            {
+                s.draw(this, canvas, false);
+            }
         }
-        if (mSecondScale != null) {
-            for (Series s : mSecondScale.getSeries()) {
+
+        if (mSecondScale != null)
+        {
+            for (Series s : mSecondScale.getSeries())
+            {
                 s.draw(this, canvas, true);
             }
         }
 
-        if (mCursorMode != null) {
+        if (mCursorMode != null)
+        {
             mCursorMode.draw(canvas);
         }
 
@@ -666,8 +687,9 @@ public class GraphView extends View {
     public void toLogScale()
     {
         if (mSeries.isEmpty()) return;
+        mLogSeries = mSeries;
         double maxY = 0;
-        for (Series s : mSeries)
+        for (Series s : mLogSeries)
         {
             Iterator<DataPoint> iterator = s.getValues(s.getLowestValueX(), s.getHighestValueX());
             ArrayList<DataPoint> dataPoints = new ArrayList<DataPoint>();
@@ -681,9 +703,11 @@ public class GraphView extends View {
             }
             ((BaseSeries) s).resetData(toDataPointArray(dataPoints));
         }
+        this.getViewport().setYAxisBoundsManual(true);
         this.getViewport().setMaxY(Math.floor(Math.log10(maxY)));
         this.getViewport().setMinY(0);
         adjustAxisLabel();
+        this.mLogScaleMode = true;
     }
 
     private DataPoint[] toDataPointArray(ArrayList<DataPoint> points)
@@ -715,5 +739,10 @@ public class GraphView extends View {
                 }
             }
         });
+    }
+
+    public boolean isLogScaleMode()
+    {
+        return this.mLogScaleMode;
     }
 }
