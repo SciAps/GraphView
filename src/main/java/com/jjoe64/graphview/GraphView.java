@@ -32,7 +32,6 @@ import android.view.View;
 
 import com.jjoe64.graphview.series.BaseSeries;
 import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.DataPointInterface;
 import com.jjoe64.graphview.series.Series;
 
 import java.io.ByteArrayOutputStream;
@@ -118,11 +117,12 @@ public class GraphView extends View {
     private List<Series> mSeries;
 
     /**
-     * A representation of mSeries, used exclusively for display log scale purpose
+     * A back up of mSeries's data, used to reconstruct mSeries to its linear state
+     * after using log scale mode.
      */
-    private List<Series> mLogSeries;
+    private ArrayList<ArrayList<DataPoint>> backUpData;
     /**
-     * the renderer for the grid and labels
+     * the renderer for the grid and xlabels
      */
     private GridLabelRenderer mGridLabelRenderer;
 
@@ -315,18 +315,10 @@ public class GraphView extends View {
         drawTitle(canvas);
         mViewport.drawFirst(canvas);
         mGridLabelRenderer.draw(canvas);
-        if (this.isLogScaleMode())
+
+        for (Series s : mSeries)
         {
-            for (Series s : mLogSeries)
-            {
-                s.draw(this, canvas, false);
-            }
-        } else
-        {
-            for (Series s : mSeries)
-            {
-                s.draw(this, canvas, false);
-            }
+            s.draw(this, canvas, false);
         }
 
         if (mSecondScale != null)
@@ -665,11 +657,11 @@ public class GraphView extends View {
             mCursorMode = null;
             invalidate();
         }
-        for (Series series : mSeries) {
-            if (series instanceof BaseSeries) {
-                ((BaseSeries) series).clearCursorModeCache();
+            for (Series series : mSeries) {
+                if (series instanceof BaseSeries) {
+                    ((BaseSeries) series).clearCursorModeCache();
+                }
             }
-        }
     }
 
     public CursorMode getCursorMode() {
@@ -687,26 +679,32 @@ public class GraphView extends View {
     public void toLogScale()
     {
         if (mSeries.isEmpty()) return;
-        mLogSeries = mSeries;
+        backUpData = new ArrayList<ArrayList<DataPoint>>();
         double maxY = 0;
-        for (Series s : mLogSeries)
+        for (Series s : mSeries)
         {
             Iterator<DataPoint> iterator = s.getValues(s.getLowestValueX(), s.getHighestValueX());
             ArrayList<DataPoint> dataPoints = new ArrayList<DataPoint>();
+            ArrayList<DataPoint> backUpDataPoints = new ArrayList<DataPoint>();
             while (iterator.hasNext())
             {
                 DataPoint currentPoint = iterator.next();
+                backUpDataPoints.add(new DataPoint(currentPoint.getX(),currentPoint.getY()));
                 double currentY = currentPoint.getY();
                 if (currentY > maxY) maxY = currentY;
-                DataPoint temp = new DataPoint(currentPoint.getX(), Math.log10(currentY));
+                currentY = Math.log10(currentY);
+                if (currentY < 0 || ((Double)currentY).isInfinite()) currentY = 0;
+                DataPoint temp = new DataPoint(currentPoint.getX(), currentY);
                 dataPoints.add(temp);
             }
+            backUpData.add(backUpDataPoints);
             ((BaseSeries) s).resetData(toDataPointArray(dataPoints));
         }
         this.getViewport().setYAxisBoundsManual(true);
         this.getViewport().setMaxY(Math.floor(Math.log10(maxY)));
         this.getViewport().setMinY(0);
         adjustAxisLabel();
+        this.onDataChanged(false,false);
         this.mLogScaleMode = true;
     }
 
@@ -744,5 +742,26 @@ public class GraphView extends View {
     public boolean isLogScaleMode()
     {
         return this.mLogScaleMode;
+    }
+
+    public void toLinearScale()
+    {
+        for (int i = 0; i < mSeries.size(); i++)
+        {
+            DataPoint[] data = toDataPointArray(backUpData.get(i));
+            Series s = mSeries.get(i);
+            ((BaseSeries) s).resetData(data);
+        }
+        this.getViewport().setYAxisBoundsManual(false);
+        this.mLogScaleMode = false;
+        this.onDataChanged(false, false);
+        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                return super.formatLabel(value, isValueX);
+            }
+        });
     }
 }
