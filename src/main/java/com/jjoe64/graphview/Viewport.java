@@ -1,13 +1,13 @@
 /**
  * GraphView
  * Copyright 2016 Jonas Gehring
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,13 +38,14 @@ import java.util.List;
  * where there is a horizontal x-axis and a
  * vertical y-axis.
  * This viewport is compatible with
- *  - {@link com.jjoe64.graphview.series.BarGraphSeries}
- *  - {@link com.jjoe64.graphview.series.LineGraphSeries}
- *  - {@link com.jjoe64.graphview.series.PointsGraphSeries}
+ * - {@link com.jjoe64.graphview.series.BarGraphSeries}
+ * - {@link com.jjoe64.graphview.series.LineGraphSeries}
+ * - {@link com.jjoe64.graphview.series.PointsGraphSeries}
  *
  * @author jjoe64
  */
-public class Viewport {
+public class Viewport
+{
     /**
      * this reference value is used to generate the
      * vertical labels. It is used when the y axis bounds
@@ -68,25 +69,31 @@ public class Viewport {
      * minimal viewport used for scaling and scrolling.
      * this is used if the data that is available is
      * less then the viewport that we want to be able to display.
-     *
+     * <p>
      * Double.NaN to disable this value
      */
     private RectD mMinimalViewport = new RectD(Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 
     /**
      * the reference number to generate the labels
-     * @return  by default 0, only when manual bounds and no human rounding
-     *          is active, the min x value is returned
+     *
+     * @return by default 0, only when manual bounds and no human rounding
+     * is active, the min x value is returned
      */
-    protected double getReferenceX() {
+    protected double getReferenceX()
+    {
         // if the bounds is manual then we take the
         // original manual min y value as reference
-        if (isXAxisBoundsManual() && !mGraphView.getGridLabelRenderer().isHumanRoundingX()) {
-            if (Double.isNaN(referenceX)) {
+        if (isXAxisBoundsManual() && !mGraphView.getGridLabelRenderer().isHumanRoundingX())
+        {
+            if (Double.isNaN(referenceX))
+            {
                 referenceX = getMinX(false);
             }
             return referenceX;
-        } else {
+        }
+        else
+        {
             // starting from 0 so that the steps have nice numbers
             return 0;
         }
@@ -97,150 +104,219 @@ public class Viewport {
      * scaling or scrolling.
      * This can be used to load more detailed data.
      */
-    public interface OnXAxisBoundsChangedListener {
+    public interface OnXAxisBoundsChangedListener
+    {
         /**
          * Called after scaling or scrolling with
          * the new bounds
+         *
          * @param minX min x value
          * @param maxX max x value
          */
         void onXAxisBoundsChanged(double minX, double maxX, OnXAxisBoundsChangedListener.Reason reason);
 
-        public enum Reason {
+        public enum Reason
+        {
             SCROLL, SCALE
         }
+    }
+
+    public float _scaleSpanX = 1.0f;
+    public float _scaleSpanY = 1.0f;
+
+    public void scaleX(final float scaleSpanX)
+    {
+        _scaleSpanX /= scaleSpanX;
+
+        double viewportWidth = mCurrentViewport.width();
+
+        if (mMaxXAxisSize != 0)
+        {
+            if (viewportWidth > mMaxXAxisSize)
+            {
+                viewportWidth = mMaxXAxisSize;
+            }
+        }
+
+        double center = mCurrentViewport.left + viewportWidth / 2;
+
+        viewportWidth /= scaleSpanX;
+        mCurrentViewport.left = center - viewportWidth / 2;
+        mCurrentViewport.right = mCurrentViewport.left + viewportWidth;
+
+        // viewportStart must not be < minX
+        double minX = getMinX(true);
+        if (!Double.isNaN(mMinimalViewport.left))
+        {
+            minX = Math.min(minX, mMinimalViewport.left);
+        }
+        if (mCurrentViewport.left < minX)
+        {
+            mCurrentViewport.left = minX;
+            mCurrentViewport.right = mCurrentViewport.left + viewportWidth;
+        }
+
+        // viewportStart + viewportSize must not be > maxX
+        double maxX = getMaxX(true);
+        if (!Double.isNaN(mMinimalViewport.right))
+        {
+            maxX = Math.max(maxX, mMinimalViewport.right);
+        }
+        if (viewportWidth == 0)
+        {
+            mCurrentViewport.right = maxX;
+        }
+        double overlap = mCurrentViewport.left + viewportWidth - maxX;
+        if (overlap > 0)
+        {
+            // scroll left
+            if (mCurrentViewport.left - overlap > minX)
+            {
+                mCurrentViewport.left -= overlap;
+                mCurrentViewport.right = mCurrentViewport.left + viewportWidth;
+            }
+            else
+            {
+                // maximal scale
+                mCurrentViewport.left = minX;
+                mCurrentViewport.right = maxX;
+            }
+        }
+    }
+
+    public void scaleY(final float scaleSpanY)
+    {
+        if (!scalableY)
+        {
+            return;
+        }
+
+        _scaleSpanY /= scaleSpanY;
+
+        boolean hasSecondScale = mGraphView.mSecondScale != null;
+
+        double viewportHeight = mCurrentViewport.height() * -1;
+
+        if (mMaxYAxisSize != 0)
+        {
+            if (viewportHeight > mMaxYAxisSize)
+            {
+                viewportHeight = mMaxYAxisSize;
+            }
+        }
+
+        double center = mCurrentViewport.bottom + viewportHeight / 2;
+
+        viewportHeight /= scaleSpanY;
+        mCurrentViewport.bottom = center - viewportHeight / 2;
+        mCurrentViewport.top = mCurrentViewport.bottom + viewportHeight;
+
+        // ignore bounds when second scale
+        if (!hasSecondScale)
+        {
+            // viewportStart must not be < minY
+            double minY = getMinY(true);
+            if (!Double.isNaN(mMinimalViewport.bottom))
+            {
+                minY = Math.min(minY, mMinimalViewport.bottom);
+            }
+            if (mCurrentViewport.bottom < minY)
+            {
+                mCurrentViewport.bottom = minY;
+                mCurrentViewport.top = mCurrentViewport.bottom + viewportHeight;
+            }
+
+            // viewportStart + viewportSize must not be > maxY
+            double maxY = getMaxY(true);
+            if (!Double.isNaN(mMinimalViewport.top))
+            {
+                maxY = Math.max(maxY, mMinimalViewport.top);
+            }
+            if (viewportHeight == 0)
+            {
+                mCurrentViewport.top = maxY;
+            }
+            double overlap = mCurrentViewport.bottom + viewportHeight - maxY;
+            if (overlap > 0)
+            {
+                // scroll left
+                if (mCurrentViewport.bottom - overlap > minY)
+                {
+                    mCurrentViewport.bottom -= overlap;
+                    mCurrentViewport.top = mCurrentViewport.bottom + viewportHeight;
+                }
+                else
+                {
+                    // maximal scale
+                    mCurrentViewport.bottom = minY;
+                    mCurrentViewport.top = maxY;
+                }
+            }
+        }
+        else
+        {
+            // ---- second scale ---
+            viewportHeight = mGraphView.mSecondScale.mCurrentViewport.height() * -1;
+            center = mGraphView.mSecondScale.mCurrentViewport.bottom + viewportHeight / 2;
+            viewportHeight /= scaleSpanY;
+            mGraphView.mSecondScale.mCurrentViewport.bottom = center - viewportHeight / 2;
+            mGraphView.mSecondScale.mCurrentViewport.top = mGraphView.mSecondScale.mCurrentViewport.bottom + viewportHeight;
+        }
+    }
+
+    public void finishedScaling()
+    {
+        // adjustSteps viewport, labels, etc.
+        mGraphView.onDataChanged(true, false);
+
+        mGraphView.postInvalidate();
+    }
+
+    public void refreshBounds()
+    {
+        // notify
+        if (mOnXAxisBoundsChangedListener != null)
+        {
+            mOnXAxisBoundsChangedListener.onXAxisBoundsChanged(getMinX(false), getMaxX(false), OnXAxisBoundsChangedListener.Reason.SCALE);
+        }
+
+        mGraphView.postInvalidate();
     }
 
     /**
      * listener for the scale gesture
      */
     private final ScaleGestureDetector.OnScaleGestureListener mScaleGestureListener
-            = new ScaleGestureDetector.OnScaleGestureListener() {
+            = new ScaleGestureDetector.OnScaleGestureListener()
+    {
         /**
          * called by android
          * @param detector detector
          * @return always true
          */
         @Override
-        public boolean onScale(ScaleGestureDetector detector) {
+        public boolean onScale(ScaleGestureDetector detector)
+        {
             // --- horizontal scaling ---
-            double viewportWidth = mCurrentViewport.width();
-
-            if (mMaxXAxisSize != 0) {
-                if (viewportWidth > mMaxXAxisSize) {
-                    viewportWidth = mMaxXAxisSize;
-                }
-            }
-
-            double center = mCurrentViewport.left + viewportWidth / 2;
-
             float scaleSpanX;
-            if (android.os.Build.VERSION.SDK_INT >= 11 && scalableY) {
-                scaleSpanX = detector.getCurrentSpanX()/detector.getPreviousSpanX();
-            } else {
+            if (scalableY)
+            {
+                scaleSpanX = detector.getCurrentSpanX() / detector.getPreviousSpanX();
+            }
+            else
+            {
                 scaleSpanX = detector.getScaleFactor();
             }
-
-            viewportWidth /= scaleSpanX;
-            mCurrentViewport.left = center - viewportWidth / 2;
-            mCurrentViewport.right = mCurrentViewport.left+viewportWidth;
-
-            // viewportStart must not be < minX
-            double minX = getMinX(true);
-            if (!Double.isNaN(mMinimalViewport.left)) {
-                minX = Math.min(minX, mMinimalViewport.left);
-            }
-            if (mCurrentViewport.left < minX) {
-                mCurrentViewport.left = minX;
-                mCurrentViewport.right = mCurrentViewport.left+viewportWidth;
-            }
-
-            // viewportStart + viewportSize must not be > maxX
-            double maxX = getMaxX(true);
-            if (!Double.isNaN(mMinimalViewport.right)) {
-                maxX = Math.max(maxX, mMinimalViewport.right);
-            }
-            if (viewportWidth == 0) {
-                mCurrentViewport.right = maxX;
-            }
-            double overlap = mCurrentViewport.left + viewportWidth - maxX;
-            if (overlap > 0) {
-                // scroll left
-                if (mCurrentViewport.left-overlap > minX) {
-                    mCurrentViewport.left -= overlap;
-                    mCurrentViewport.right = mCurrentViewport.left+viewportWidth;
-                } else {
-                    // maximal scale
-                    mCurrentViewport.left = minX;
-                    mCurrentViewport.right = maxX;
-                }
-            }
-
+            scaleX(scaleSpanX);
 
             // --- vertical scaling ---
-            if (scalableY && android.os.Build.VERSION.SDK_INT >= 11 && detector.getCurrentSpanY() != 0f && detector.getPreviousSpanY() != 0f) {
-                boolean hasSecondScale = mGraphView.mSecondScale != null;
-
-                double viewportHeight = mCurrentViewport.height()*-1;
-
-                if (mMaxYAxisSize != 0) {
-                    if (viewportHeight > mMaxYAxisSize) {
-                        viewportHeight = mMaxYAxisSize;
-                    }
-                }
-
-                center = mCurrentViewport.bottom + viewportHeight / 2;
-
-                viewportHeight /= detector.getCurrentSpanY()/detector.getPreviousSpanY();
-                mCurrentViewport.bottom = center - viewportHeight / 2;
-                mCurrentViewport.top = mCurrentViewport.bottom+viewportHeight;
-
-                // ignore bounds when second scale
-                if (!hasSecondScale) {
-                    // viewportStart must not be < minY
-                    double minY = getMinY(true);
-                    if (!Double.isNaN(mMinimalViewport.bottom)) {
-                        minY = Math.min(minY, mMinimalViewport.bottom);
-                    }
-                    if (mCurrentViewport.bottom < minY) {
-                        mCurrentViewport.bottom = minY;
-                        mCurrentViewport.top = mCurrentViewport.bottom+viewportHeight;
-                    }
-
-                    // viewportStart + viewportSize must not be > maxY
-                    double maxY = getMaxY(true);
-                    if (!Double.isNaN(mMinimalViewport.top)) {
-                        maxY = Math.max(maxY, mMinimalViewport.top);
-                    }
-                    if (viewportHeight == 0) {
-                        mCurrentViewport.top = maxY;
-                    }
-                    overlap = mCurrentViewport.bottom + viewportHeight - maxY;
-                    if (overlap > 0) {
-                        // scroll left
-                        if (mCurrentViewport.bottom-overlap > minY) {
-                            mCurrentViewport.bottom -= overlap;
-                            mCurrentViewport.top = mCurrentViewport.bottom+viewportHeight;
-                        } else {
-                            // maximal scale
-                            mCurrentViewport.bottom = minY;
-                            mCurrentViewport.top = maxY;
-                        }
-                    }
-                } else {
-                    // ---- second scale ---
-                    viewportHeight = mGraphView.mSecondScale.mCurrentViewport.height()*-1;
-                    center = mGraphView.mSecondScale.mCurrentViewport.bottom + viewportHeight / 2;
-                    viewportHeight /= detector.getCurrentSpanY()/detector.getPreviousSpanY();
-                    mGraphView.mSecondScale.mCurrentViewport.bottom = center - viewportHeight / 2;
-                    mGraphView.mSecondScale.mCurrentViewport.top = mGraphView.mSecondScale.mCurrentViewport.bottom+viewportHeight;
-                }
+            if (scalableY && detector.getCurrentSpanY() != 0f && detector.getPreviousSpanY() != 0f)
+            {
+                scaleY(detector.getCurrentSpanY() / detector.getPreviousSpanY());
             }
 
             // adjustSteps viewport, labels, etc.
-            mGraphView.onDataChanged(true, false);
-
-            mGraphView.postInvalidate();
+            finishedScaling();
 
             return true;
         }
@@ -252,16 +328,21 @@ public class Viewport {
          * @return true if it is scalable
          */
         @Override
-        public boolean onScaleBegin(ScaleGestureDetector detector) {
+        public boolean onScaleBegin(ScaleGestureDetector detector)
+        {
             // cursor mode
-            if (mGraphView.isCursorMode()) {
+            if (mGraphView.isCursorMode())
+            {
                 return false;
             }
 
-            if (mIsScalable) {
+            if (mIsScalable)
+            {
                 mScalingActive = true;
                 return true;
-            } else {
+            }
+            else
+            {
                 return false;
             }
         }
@@ -273,15 +354,11 @@ public class Viewport {
          * @param detector detector
          */
         @Override
-        public void onScaleEnd(ScaleGestureDetector detector) {
+        public void onScaleEnd(ScaleGestureDetector detector)
+        {
             mScalingActive = false;
 
-            // notify
-            if (mOnXAxisBoundsChangedListener != null) {
-                mOnXAxisBoundsChangedListener.onXAxisBoundsChanged(getMinX(false), getMaxX(false), OnXAxisBoundsChangedListener.Reason.SCALE);
-            }
-
-            mGraphView.postInvalidate();
+            refreshBounds();
         }
     };
 
@@ -289,15 +366,21 @@ public class Viewport {
      * simple gesture listener to track scroll events
      */
     private final GestureDetector.SimpleOnGestureListener mGestureListener
-            = new GestureDetector.SimpleOnGestureListener() {
+            = new GestureDetector.SimpleOnGestureListener()
+    {
         @Override
-        public boolean onDown(MotionEvent e) {
+        public boolean onDown(MotionEvent e)
+        {
             // cursor mode
-            if (mGraphView.isCursorMode()) {
+            if (mGraphView.isCursorMode())
+            {
                 return true;
             }
 
-            if (!mIsScrollable || mScalingActive) return false;
+            if (!mIsScrollable || mScalingActive)
+            {
+                return false;
+            }
 
             // Initiates the decay phase of any active edge effects.
             releaseEdgeEffects();
@@ -308,12 +391,17 @@ public class Viewport {
         }
 
         @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
+        {
             // cursor mode
-            if (mGraphView.isCursorMode()) {
+            if (mGraphView.isCursorMode())
+            {
                 return true;
             }
-            if (!mIsScrollable || mScalingActive) return false;
+            if (!mIsScrollable || mScalingActive)
+            {
+                return false;
+            }
 
             // Scrolling uses math based on the viewport (as opposed to math using pixels).
             /**
@@ -328,27 +416,31 @@ public class Viewport {
 
             // respect minimal viewport
             double completeRangeLeft = mCompleteRange.left;
-            if (!Double.isNaN(mMinimalViewport.left)) {
+            if (!Double.isNaN(mMinimalViewport.left))
+            {
                 completeRangeLeft = Math.min(completeRangeLeft, mMinimalViewport.left);
             }
             double completeRangeRight = mCompleteRange.right;
-            if (!Double.isNaN(mMinimalViewport.right)) {
+            if (!Double.isNaN(mMinimalViewport.right))
+            {
                 completeRangeRight = Math.max(completeRangeRight, mMinimalViewport.right);
             }
             double completeRangeWidth = completeRangeRight - completeRangeLeft;
 
             double completeRangeBottom = mCompleteRange.bottom;
-            if (!Double.isNaN(mMinimalViewport.bottom)) {
+            if (!Double.isNaN(mMinimalViewport.bottom))
+            {
                 completeRangeBottom = Math.min(completeRangeBottom, mMinimalViewport.bottom);
             }
             double completeRangeTop = mCompleteRange.top;
-            if (!Double.isNaN(mMinimalViewport.top)) {
+            if (!Double.isNaN(mMinimalViewport.top))
+            {
                 completeRangeTop = Math.max(completeRangeTop, mMinimalViewport.top);
             }
             double completeRangeHeight = completeRangeTop - completeRangeBottom;
 
-            int completeWidth = (int)((completeRangeWidth/mCurrentViewport.width()) * (double) mGraphView.getGraphContentWidth());
-            int completeHeight = (int)((completeRangeHeight/mCurrentViewport.height()) * (double) mGraphView.getGraphContentHeight());
+            int completeWidth = (int) ((completeRangeWidth / mCurrentViewport.width()) * (double) mGraphView.getGraphContentWidth());
+            int completeHeight = (int) ((completeRangeHeight / mCurrentViewport.height()) * (double) mGraphView.getGraphContentHeight());
 
             int scrolledX = (int) (completeWidth
                     * (mCurrentViewport.left + viewportOffsetX - completeRangeLeft)
@@ -356,7 +448,7 @@ public class Viewport {
 
             int scrolledY = (int) (completeHeight
                     * (mCurrentViewport.bottom + viewportOffsetY - completeRangeBottom)
-                    / completeRangeHeight*-1);
+                    / completeRangeHeight * -1);
             boolean canScrollX = mCurrentViewport.left > completeRangeLeft
                     || mCurrentViewport.right < completeRangeRight;
             boolean canScrollY = mCurrentViewport.bottom > completeRangeBottom
@@ -366,7 +458,8 @@ public class Viewport {
 
             // second scale
             double viewportOffsetY2 = 0d;
-            if (hasSecondScale) {
+            if (hasSecondScale)
+            {
                 viewportOffsetY2 = distanceY * mGraphView.mSecondScale.mCurrentViewport.height() / mGraphView.getGraphContentHeight();
                 canScrollY |= mGraphView.mSecondScale.mCurrentViewport.bottom > mGraphView.mSecondScale.mCompleteRange.bottom
                         || mGraphView.mSecondScale.mCurrentViewport.top < mGraphView.mSecondScale.mCompleteRange.top;
@@ -374,15 +467,21 @@ public class Viewport {
 
             canScrollY &= scrollableY;
 
-            if (canScrollX) {
-                if (viewportOffsetX < 0) {
-                    double tooMuch = mCurrentViewport.left+viewportOffsetX - completeRangeLeft;
-                    if (tooMuch < 0) {
+            if (canScrollX)
+            {
+                if (viewportOffsetX < 0)
+                {
+                    double tooMuch = mCurrentViewport.left + viewportOffsetX - completeRangeLeft;
+                    if (tooMuch < 0)
+                    {
                         viewportOffsetX -= tooMuch;
                     }
-                } else {
-                    double tooMuch = mCurrentViewport.right+viewportOffsetX - completeRangeRight;
-                    if (tooMuch > 0) {
+                }
+                else
+                {
+                    double tooMuch = mCurrentViewport.right + viewportOffsetX - completeRangeRight;
+                    if (tooMuch > 0)
+                    {
                         viewportOffsetX -= tooMuch;
                     }
                 }
@@ -391,21 +490,29 @@ public class Viewport {
                 mCurrentViewport.right += viewportOffsetX;
 
                 // notify
-                if (mOnXAxisBoundsChangedListener != null) {
+                if (mOnXAxisBoundsChangedListener != null)
+                {
                     mOnXAxisBoundsChangedListener.onXAxisBoundsChanged(getMinX(false), getMaxX(false), OnXAxisBoundsChangedListener.Reason.SCROLL);
                 }
             }
-            if (canScrollY) {
+            if (canScrollY)
+            {
                 // if we have the second axis we ignore the max/min range
-                if (!hasSecondScale) {
-                    if (viewportOffsetY < 0) {
-                        double tooMuch = mCurrentViewport.bottom+viewportOffsetY - completeRangeBottom;
-                        if (tooMuch < 0) {
+                if (!hasSecondScale)
+                {
+                    if (viewportOffsetY < 0)
+                    {
+                        double tooMuch = mCurrentViewport.bottom + viewportOffsetY - completeRangeBottom;
+                        if (tooMuch < 0)
+                        {
                             viewportOffsetY -= tooMuch;
                         }
-                    } else {
-                        double tooMuch = mCurrentViewport.top+viewportOffsetY - completeRangeTop;
-                        if (tooMuch > 0) {
+                    }
+                    else
+                    {
+                        double tooMuch = mCurrentViewport.top + viewportOffsetY - completeRangeTop;
+                        if (tooMuch > 0)
+                        {
                             viewportOffsetY -= tooMuch;
                         }
                     }
@@ -415,23 +522,28 @@ public class Viewport {
                 mCurrentViewport.bottom += viewportOffsetY;
 
                 // second scale
-                if (hasSecondScale) {
+                if (hasSecondScale)
+                {
                     mGraphView.mSecondScale.mCurrentViewport.top += viewportOffsetY2;
                     mGraphView.mSecondScale.mCurrentViewport.bottom += viewportOffsetY2;
                 }
             }
 
-            if (canScrollX && scrolledX < 0) {
+            if (canScrollX && scrolledX < 0)
+            {
                 mEdgeEffectLeft.onPull(scrolledX / (float) mGraphView.getGraphContentWidth());
             }
-            if (!hasSecondScale && canScrollY && scrolledY < 0) {
+            if (!hasSecondScale && canScrollY && scrolledY < 0)
+            {
                 mEdgeEffectBottom.onPull(scrolledY / (float) mGraphView.getGraphContentHeight());
             }
-            if (canScrollX && scrolledX > completeWidth - mGraphView.getGraphContentWidth()) {
+            if (canScrollX && scrolledX > completeWidth - mGraphView.getGraphContentWidth())
+            {
                 mEdgeEffectRight.onPull((scrolledX - completeWidth + mGraphView.getGraphContentWidth())
                         / (float) mGraphView.getGraphContentWidth());
             }
-            if (!hasSecondScale && canScrollY && scrolledY > completeHeight - mGraphView.getGraphContentHeight()) {
+            if (!hasSecondScale && canScrollY && scrolledY > completeHeight - mGraphView.getGraphContentHeight())
+            {
                 mEdgeEffectTop.onPull((scrolledY - completeHeight + mGraphView.getGraphContentHeight())
                         / (float) mGraphView.getGraphContentHeight());
             }
@@ -445,7 +557,8 @@ public class Viewport {
 
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2,
-                               float velocityX, float velocityY) {
+                               float velocityX, float velocityY)
+        {
             //fling((int) -velocityX, (int) -velocityY);
             return true;
         }
@@ -454,7 +567,8 @@ public class Viewport {
     /**
      * the state of the axis bounds
      */
-    public enum AxisBoundsStatus {
+    public enum AxisBoundsStatus
+    {
         /**
          * initial means that the bounds gets
          * auto adjusted if they are not manual.
@@ -611,12 +725,14 @@ public class Viewport {
 
     /**
      * color of the border
+     *
      * @see #setDrawBorder(boolean)
      */
     private Integer mBorderColor;
 
     /**
      * custom paint to use for the border
+     *
      * @see #setDrawBorder(boolean)
      */
     private Paint mBorderPaint;
@@ -626,7 +742,8 @@ public class Viewport {
      *
      * @param graphView graphview
      */
-    Viewport(GraphView graphView) {
+    Viewport(GraphView graphView)
+    {
         mScroller = new OverScroller(graphView.getContext());
         mEdgeEffectTop = new EdgeEffectCompat(graphView.getContext());
         mEdgeEffectBottom = new EdgeEffectCompat(graphView.getContext());
@@ -649,19 +766,24 @@ public class Viewport {
      * @param event
      * @return true if it was consumed
      */
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(MotionEvent event)
+    {
         boolean b = mScaleGestureDetector.onTouchEvent(event);
         b |= mGestureDetector.onTouchEvent(event);
-        if (mGraphView.isCursorMode()) {
-            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        if (mGraphView.isCursorMode())
+        {
+            if (event.getAction() == MotionEvent.ACTION_DOWN)
+            {
                 mGraphView.getCursorMode().onDown(event);
                 b |= true;
             }
-            if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (event.getAction() == MotionEvent.ACTION_MOVE)
+            {
                 mGraphView.getCursorMode().onMove(event);
                 b |= true;
             }
-            if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (event.getAction() == MotionEvent.ACTION_UP)
+            {
                 b |= mGraphView.getCursorMode().onUp(event);
             }
         }
@@ -676,7 +798,8 @@ public class Viewport {
      *
      * @param s state
      */
-    public void setXAxisBoundsStatus(AxisBoundsStatus s) {
+    public void setXAxisBoundsStatus(AxisBoundsStatus s)
+    {
         mXAxisBoundsStatus = s;
     }
 
@@ -688,35 +811,40 @@ public class Viewport {
      *
      * @param s state
      */
-    public void setYAxisBoundsStatus(AxisBoundsStatus s) {
+    public void setYAxisBoundsStatus(AxisBoundsStatus s)
+    {
         mYAxisBoundsStatus = s;
     }
 
     /**
      * @return whether the viewport is scrollable
      */
-    public boolean isScrollable() {
+    public boolean isScrollable()
+    {
         return mIsScrollable;
     }
 
     /**
      * @param mIsScrollable whether is viewport is scrollable
      */
-    public void setScrollable(boolean mIsScrollable) {
+    public void setScrollable(boolean mIsScrollable)
+    {
         this.mIsScrollable = mIsScrollable;
     }
 
     /**
      * @return the x axis state
      */
-    public AxisBoundsStatus getXAxisBoundsStatus() {
+    public AxisBoundsStatus getXAxisBoundsStatus()
+    {
         return mXAxisBoundsStatus;
     }
 
     /**
      * @return the y axis state
      */
-    public AxisBoundsStatus getYAxisBoundsStatus() {
+    public AxisBoundsStatus getYAxisBoundsStatus()
+    {
         return mYAxisBoundsStatus;
     }
 
@@ -724,46 +852,58 @@ public class Viewport {
      * caches the complete range (minX, maxX, minY, maxY)
      * by iterating all series and all datapoints and
      * stores it into #mCompleteRange
-     *
+     * <p>
      * for the x-range it will respect the series on the
      * second scale - not for y-values
      */
-    public void calcCompleteRange() {
+    public void calcCompleteRange()
+    {
         List<Series> series = mGraphView.getSeries();
         List<Series> seriesInclusiveSecondScale = new ArrayList<Series>(mGraphView.getSeries());
-        if (mGraphView.mSecondScale != null) {
+        if (mGraphView.mSecondScale != null)
+        {
             seriesInclusiveSecondScale.addAll(mGraphView.mSecondScale.getSeries());
         }
         mCompleteRange.set(0d, 0d, 0d, 0d);
-        if (!seriesInclusiveSecondScale.isEmpty() && !seriesInclusiveSecondScale.get(0).isEmpty()) {
+        if (!seriesInclusiveSecondScale.isEmpty() && !seriesInclusiveSecondScale.get(0).isEmpty())
+        {
             double d = seriesInclusiveSecondScale.get(0).getLowestValueX();
-            for (Series s : seriesInclusiveSecondScale) {
-                if (!s.isEmpty() && d > s.getLowestValueX()) {
+            for (Series s : seriesInclusiveSecondScale)
+            {
+                if (!s.isEmpty() && d > s.getLowestValueX())
+                {
                     d = s.getLowestValueX();
                 }
             }
             mCompleteRange.left = d;
 
             d = seriesInclusiveSecondScale.get(0).getHighestValueX();
-            for (Series s : seriesInclusiveSecondScale) {
-                if (!s.isEmpty() && d < s.getHighestValueX()) {
+            for (Series s : seriesInclusiveSecondScale)
+            {
+                if (!s.isEmpty() && d < s.getHighestValueX())
+                {
                     d = s.getHighestValueX();
                 }
             }
             mCompleteRange.right = d;
 
-            if (!series.isEmpty() && !series.get(0).isEmpty()) {
+            if (!series.isEmpty() && !series.get(0).isEmpty())
+            {
                 d = series.get(0).getLowestValueY();
-                for (Series s : series) {
-                    if (!s.isEmpty() && d > s.getLowestValueY()) {
+                for (Series s : series)
+                {
+                    if (!s.isEmpty() && d > s.getLowestValueY())
+                    {
                         d = s.getLowestValueY();
                     }
                 }
                 mCompleteRange.bottom = d;
 
                 d = series.get(0).getHighestValueY();
-                for (Series s : series) {
-                    if (!s.isEmpty() && d < s.getHighestValueY()) {
+                for (Series s : series)
+                {
+                    if (!s.isEmpty() && d < s.getHighestValueY())
+                    {
                         d = s.getHighestValueY();
                     }
                 }
@@ -772,108 +912,144 @@ public class Viewport {
         }
 
         // calc current viewport bounds
-        if (mYAxisBoundsStatus == AxisBoundsStatus.AUTO_ADJUSTED) {
+        if (mYAxisBoundsStatus == AxisBoundsStatus.AUTO_ADJUSTED)
+        {
             mYAxisBoundsStatus = AxisBoundsStatus.INITIAL;
         }
-        if (mYAxisBoundsStatus == AxisBoundsStatus.INITIAL) {
+        if (mYAxisBoundsStatus == AxisBoundsStatus.INITIAL)
+        {
             mCurrentViewport.top = mCompleteRange.top;
             mCurrentViewport.bottom = mCompleteRange.bottom;
         }
 
-        if (mXAxisBoundsStatus == AxisBoundsStatus.AUTO_ADJUSTED) {
+        if (mXAxisBoundsStatus == AxisBoundsStatus.AUTO_ADJUSTED)
+        {
             mXAxisBoundsStatus = AxisBoundsStatus.INITIAL;
         }
-        if (mXAxisBoundsStatus == AxisBoundsStatus.INITIAL) {
+        if (mXAxisBoundsStatus == AxisBoundsStatus.INITIAL)
+        {
             mCurrentViewport.left = mCompleteRange.left;
             mCurrentViewport.right = mCompleteRange.right;
-        } else if (mXAxisBoundsManual && !mYAxisBoundsManual && mCompleteRange.width() != 0) {
+        }
+        else if (mXAxisBoundsManual && !mYAxisBoundsManual && mCompleteRange.width() != 0)
+        {
             // get highest/lowest of current viewport
             // lowest
             double d = Double.MAX_VALUE;
-            for (Series s : series) {
+            for (Series s : series)
+            {
                 Iterator<DataPointInterface> values = s.getValues(mCurrentViewport.left, mCurrentViewport.right);
-                while (values.hasNext()) {
+                while (values.hasNext())
+                {
                     double v = values.next().getY();
-                    if (d > v) {
+                    if (d > v)
+                    {
                         d = v;
                     }
                 }
             }
 
-            if (d != Double.MAX_VALUE) {
+            if (d != Double.MAX_VALUE)
+            {
                 mCurrentViewport.bottom = d;
             }
 
             // highest
             d = Double.MIN_VALUE;
-            for (Series s : series) {
+            for (Series s : series)
+            {
                 Iterator<DataPointInterface> values = s.getValues(mCurrentViewport.left, mCurrentViewport.right);
-                while (values.hasNext()) {
+                while (values.hasNext())
+                {
                     double v = values.next().getY();
-                    if (d < v) {
+                    if (d < v)
+                    {
                         d = v;
                     }
                 }
             }
 
-            if (d != Double.MIN_VALUE) {
+            if (d != Double.MIN_VALUE)
+            {
                 mCurrentViewport.top = d;
             }
         }
 
         // fixes blank screen when range is zero
-        if (mCurrentViewport.left == mCurrentViewport.right) mCurrentViewport.right++;
-        if (mCurrentViewport.top == mCurrentViewport.bottom) mCurrentViewport.top++;
+        if (mCurrentViewport.left == mCurrentViewport.right)
+        {
+            mCurrentViewport.right++;
+        }
+        if (mCurrentViewport.top == mCurrentViewport.bottom)
+        {
+            mCurrentViewport.top++;
+        }
     }
 
     /**
-     * @param completeRange     if true => minX of the complete range of all series
-     *                          if false => minX of the current visible viewport
+     * @param completeRange if true => minX of the complete range of all series
+     *                      if false => minX of the current visible viewport
      * @return the min x value
      */
-    public double getMinX(boolean completeRange) {
-        if (completeRange) {
+    public double getMinX(boolean completeRange)
+    {
+        if (completeRange)
+        {
             return mCompleteRange.left;
-        } else {
+        }
+        else
+        {
             return mCurrentViewport.left;
         }
     }
 
     /**
-     * @param completeRange     if true => maxX of the complete range of all series
-     *                          if false => maxX of the current visible viewport
+     * @param completeRange if true => maxX of the complete range of all series
+     *                      if false => maxX of the current visible viewport
      * @return the max x value
      */
-    public double getMaxX(boolean completeRange) {
-        if (completeRange) {
+    public double getMaxX(boolean completeRange)
+    {
+        if (completeRange)
+        {
             return mCompleteRange.right;
-        } else {
+        }
+        else
+        {
             return mCurrentViewport.right;
         }
     }
 
     /**
-     * @param completeRange     if true => minY of the complete range of all series
-     *                          if false => minY of the current visible viewport
+     * @param completeRange if true => minY of the complete range of all series
+     *                      if false => minY of the current visible viewport
      * @return the min y value
      */
-    public double getMinY(boolean completeRange) {
-        if (completeRange) {
+    public double getMinY(boolean completeRange)
+    {
+        if (completeRange)
+        {
             return mCompleteRange.bottom;
-        } else {
+        }
+        else
+        {
             return mCurrentViewport.bottom;
         }
     }
 
     /**
-     * @param completeRange     if true => maxY of the complete range of all series
-     *                          if false => maxY of the current visible viewport
+     * @param completeRange if true => maxY of the complete range of all series
+     *                      if false => maxY of the current visible viewport
      * @return the max y value
      */
-    public double getMaxY(boolean completeRange) {
-        if (completeRange) {
+    public double getMaxY(boolean completeRange)
+    {
+        if (completeRange)
+        {
             return mCompleteRange.top;
-        } else {
+        }
+        else
+        {
             return mCurrentViewport.top;
         }
     }
@@ -882,9 +1058,11 @@ public class Viewport {
      * set the maximal y value for the current viewport.
      * Make sure to set the y bounds to manual via
      * {@link #setYAxisBoundsManual(boolean)}
+     *
      * @param y max / highest value
      */
-    public void setMaxY(double y) {
+    public void setMaxY(double y)
+    {
         mCurrentViewport.top = y;
     }
 
@@ -892,9 +1070,11 @@ public class Viewport {
      * set the minimal y value for the current viewport.
      * Make sure to set the y bounds to manual via
      * {@link #setYAxisBoundsManual(boolean)}
+     *
      * @param y min / lowest value
      */
-    public void setMinY(double y) {
+    public void setMinY(double y)
+    {
         mCurrentViewport.bottom = y;
     }
 
@@ -902,9 +1082,11 @@ public class Viewport {
      * set the maximal x value for the current viewport.
      * Make sure to set the x bounds to manual via
      * {@link #setXAxisBoundsManual(boolean)}
+     *
      * @param x max / highest value
      */
-    public void setMaxX(double x) {
+    public void setMaxX(double x)
+    {
         mCurrentViewport.right = x;
     }
 
@@ -912,16 +1094,19 @@ public class Viewport {
      * set the minimal x value for the current viewport.
      * Make sure to set the x bounds to manual via
      * {@link #setXAxisBoundsManual(boolean)}
+     *
      * @param x min / lowest value
      */
-    public void setMinX(double x) {
+    public void setMinX(double x)
+    {
         mCurrentViewport.left = x;
     }
 
     /**
      * release the glowing effects
      */
-    private void releaseEdgeEffects() {
+    private void releaseEdgeEffects()
+    {
         mEdgeEffectLeft.onRelease();
         mEdgeEffectRight.onRelease();
         mEdgeEffectTop.onRelease();
@@ -934,14 +1119,15 @@ public class Viewport {
      * @param velocityX
      * @param velocityY
      */
-    private void fling(int velocityX, int velocityY) {
+    private void fling(int velocityX, int velocityY)
+    {
         velocityY = 0;
         releaseEdgeEffects();
         // Flings use math in pixels (as opposed to math based on the viewport).
-        int maxX = (int)((mCurrentViewport.width()/mCompleteRange.width())*(float)mGraphView.getGraphContentWidth()) - mGraphView.getGraphContentWidth();
-        int maxY = (int)((mCurrentViewport.height()/mCompleteRange.height())*(float)mGraphView.getGraphContentHeight()) - mGraphView.getGraphContentHeight();
-        int startX = (int)((mCurrentViewport.left - mCompleteRange.left)/mCompleteRange.width())*maxX;
-        int startY = (int)((mCurrentViewport.top - mCompleteRange.top)/mCompleteRange.height())*maxY;
+        int maxX = (int) ((mCurrentViewport.width() / mCompleteRange.width()) * (float) mGraphView.getGraphContentWidth()) - mGraphView.getGraphContentWidth();
+        int maxY = (int) ((mCurrentViewport.height() / mCompleteRange.height()) * (float) mGraphView.getGraphContentHeight()) - mGraphView.getGraphContentHeight();
+        int startX = (int) ((mCurrentViewport.left - mCompleteRange.left) / mCompleteRange.width()) * maxX;
+        int startY = (int) ((mCurrentViewport.top - mCompleteRange.top) / mCompleteRange.height()) * maxY;
         mScroller.forceFinished(true);
         mScroller.fling(
                 startX,
@@ -958,7 +1144,8 @@ public class Viewport {
     /**
      * not used currently
      */
-    public void computeScroll() {
+    public void computeScroll()
+    {
     }
 
     /**
@@ -966,56 +1153,66 @@ public class Viewport {
      *
      * @see EdgeEffectCompat
      */
-    private void drawEdgeEffectsUnclipped(Canvas canvas) {
+    private void drawEdgeEffectsUnclipped(Canvas canvas)
+    {
         // The methods below rotate and translate the canvas as needed before drawing the glow,
         // since EdgeEffectCompat always draws a top-glow at 0,0.
 
         boolean needsInvalidate = false;
 
-        if (!mEdgeEffectTop.isFinished()) {
+        if (!mEdgeEffectTop.isFinished())
+        {
             final int restoreCount = canvas.save();
             canvas.translate(mGraphView.getGraphContentLeft(), mGraphView.getGraphContentTop());
             mEdgeEffectTop.setSize(mGraphView.getGraphContentWidth(), mGraphView.getGraphContentHeight());
-            if (mEdgeEffectTop.draw(canvas)) {
+            if (mEdgeEffectTop.draw(canvas))
+            {
                 needsInvalidate = true;
             }
             canvas.restoreToCount(restoreCount);
         }
 
-        if (!mEdgeEffectBottom.isFinished()) {
+        if (!mEdgeEffectBottom.isFinished())
+        {
             final int restoreCount = canvas.save();
-            canvas.translate(mGraphView.getGraphContentLeft(), mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight());
-            canvas.rotate(180, mGraphView.getGraphContentWidth()/2, 0);
+            canvas.translate(mGraphView.getGraphContentLeft(), mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight());
+            canvas.rotate(180, mGraphView.getGraphContentWidth() / 2, 0);
             mEdgeEffectBottom.setSize(mGraphView.getGraphContentWidth(), mGraphView.getGraphContentHeight());
-            if (mEdgeEffectBottom.draw(canvas)) {
+            if (mEdgeEffectBottom.draw(canvas))
+            {
                 needsInvalidate = true;
             }
             canvas.restoreToCount(restoreCount);
         }
 
-        if (!mEdgeEffectLeft.isFinished()) {
+        if (!mEdgeEffectLeft.isFinished())
+        {
             final int restoreCount = canvas.save();
-            canvas.translate(mGraphView.getGraphContentLeft(), mGraphView.getGraphContentTop()+ mGraphView.getGraphContentHeight());
+            canvas.translate(mGraphView.getGraphContentLeft(), mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight());
             canvas.rotate(-90, 0, 0);
             mEdgeEffectLeft.setSize(mGraphView.getGraphContentHeight(), mGraphView.getGraphContentWidth());
-            if (mEdgeEffectLeft.draw(canvas)) {
+            if (mEdgeEffectLeft.draw(canvas))
+            {
                 needsInvalidate = true;
             }
             canvas.restoreToCount(restoreCount);
         }
 
-        if (!mEdgeEffectRight.isFinished()) {
+        if (!mEdgeEffectRight.isFinished())
+        {
             final int restoreCount = canvas.save();
-            canvas.translate(mGraphView.getGraphContentLeft()+ mGraphView.getGraphContentWidth(), mGraphView.getGraphContentTop());
+            canvas.translate(mGraphView.getGraphContentLeft() + mGraphView.getGraphContentWidth(), mGraphView.getGraphContentTop());
             canvas.rotate(90, 0, 0);
             mEdgeEffectRight.setSize(mGraphView.getGraphContentHeight(), mGraphView.getGraphContentWidth());
-            if (mEdgeEffectRight.draw(canvas)) {
+            if (mEdgeEffectRight.draw(canvas))
+            {
                 needsInvalidate = true;
             }
             canvas.restoreToCount(restoreCount);
         }
 
-        if (needsInvalidate) {
+        if (needsInvalidate)
+        {
             mGraphView.postInvalidate();
         }
     }
@@ -1027,23 +1224,29 @@ public class Viewport {
      *
      * @param c canvas.
      */
-    public void drawFirst(Canvas c) {
+    public void drawFirst(Canvas c)
+    {
         // draw background
-        if (mBackgroundColor != Color.TRANSPARENT) {
+        if (mBackgroundColor != Color.TRANSPARENT)
+        {
             mPaint.setColor(mBackgroundColor);
             c.drawRect(
                     mGraphView.getGraphContentLeft(),
                     mGraphView.getGraphContentTop(),
-                    mGraphView.getGraphContentLeft()+mGraphView.getGraphContentWidth(),
-                    mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight(),
+                    mGraphView.getGraphContentLeft() + mGraphView.getGraphContentWidth(),
+                    mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight(),
                     mPaint
             );
         }
-        if (mDrawBorder) {
+        if (mDrawBorder)
+        {
             Paint p;
-            if (mBorderPaint != null) {
+            if (mBorderPaint != null)
+            {
                 p = mBorderPaint;
-            } else {
+            }
+            else
+            {
                 p = mPaint;
                 p.setColor(getBorderColor());
             }
@@ -1051,23 +1254,24 @@ public class Viewport {
                     mGraphView.getGraphContentLeft(),
                     mGraphView.getGraphContentTop(),
                     mGraphView.getGraphContentLeft(),
-                    mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight(),
+                    mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight(),
                     p
             );
             c.drawLine(
                     mGraphView.getGraphContentLeft(),
-                    mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight(),
-                    mGraphView.getGraphContentLeft()+mGraphView.getGraphContentWidth(),
-                    mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight(),
+                    mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight(),
+                    mGraphView.getGraphContentLeft() + mGraphView.getGraphContentWidth(),
+                    mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight(),
                     p
             );
             // on the right side if we have second scale
-            if (mGraphView.mSecondScale != null) {
+            if (mGraphView.mSecondScale != null)
+            {
                 c.drawLine(
-                        mGraphView.getGraphContentLeft()+mGraphView.getGraphContentWidth(),
+                        mGraphView.getGraphContentLeft() + mGraphView.getGraphContentWidth(),
                         mGraphView.getGraphContentTop(),
-                        mGraphView.getGraphContentLeft()+mGraphView.getGraphContentWidth(),
-                        mGraphView.getGraphContentTop()+mGraphView.getGraphContentHeight(),
+                        mGraphView.getGraphContentLeft() + mGraphView.getGraphContentWidth(),
+                        mGraphView.getGraphContentTop() + mGraphView.getGraphContentHeight(),
                         p
                 );
             }
@@ -1079,29 +1283,33 @@ public class Viewport {
      *
      * @param c canvas
      */
-    public void draw(Canvas c) {
+    public void draw(Canvas c)
+    {
         drawEdgeEffectsUnclipped(c);
     }
 
     /**
      * @return background of the viewport area
      */
-    public int getBackgroundColor() {
+    public int getBackgroundColor()
+    {
         return mBackgroundColor;
     }
 
     /**
-     * @param mBackgroundColor  background of the viewport area
-     *                          use transparent to have no background
+     * @param mBackgroundColor background of the viewport area
+     *                         use transparent to have no background
      */
-    public void setBackgroundColor(int mBackgroundColor) {
+    public void setBackgroundColor(int mBackgroundColor)
+    {
         this.mBackgroundColor = mBackgroundColor;
     }
 
     /**
      * @return whether the viewport is scalable
      */
-    public boolean isScalable() {
+    public boolean isScalable()
+    {
         return mIsScalable;
     }
 
@@ -1111,9 +1319,11 @@ public class Viewport {
      *
      * @param mIsScalable whether the viewport is scalable
      */
-    public void setScalable(boolean mIsScalable) {
+    public void setScalable(boolean mIsScalable)
+    {
         this.mIsScalable = mIsScalable;
-        if (mIsScalable) {
+        if (mIsScalable)
+        {
             mIsScrollable = true;
 
             // set viewport to manual
@@ -1127,7 +1337,8 @@ public class Viewport {
      * @see #setMinX(double)
      * @see #setMaxX(double)
      */
-    public boolean isXAxisBoundsManual() {
+    public boolean isXAxisBoundsManual()
+    {
         return mXAxisBoundsManual;
     }
 
@@ -1136,9 +1347,11 @@ public class Viewport {
      * @see #setMinX(double)
      * @see #setMaxX(double)
      */
-    public void setXAxisBoundsManual(boolean mXAxisBoundsManual) {
+    public void setXAxisBoundsManual(boolean mXAxisBoundsManual)
+    {
         this.mXAxisBoundsManual = mXAxisBoundsManual;
-        if (mXAxisBoundsManual) {
+        if (mXAxisBoundsManual)
+        {
             mXAxisBoundsStatus = AxisBoundsStatus.FIX;
         }
     }
@@ -1146,7 +1359,8 @@ public class Viewport {
     /**
      * @return whether the y axis bound are manual
      */
-    public boolean isYAxisBoundsManual() {
+    public boolean isYAxisBoundsManual()
+    {
         return mYAxisBoundsManual;
     }
 
@@ -1155,9 +1369,11 @@ public class Viewport {
      * @see #setMaxY(double)
      * @see #setMinY(double)
      */
-    public void setYAxisBoundsManual(boolean mYAxisBoundsManual) {
+    public void setYAxisBoundsManual(boolean mYAxisBoundsManual)
+    {
         this.mYAxisBoundsManual = mYAxisBoundsManual;
-        if (mYAxisBoundsManual) {
+        if (mYAxisBoundsManual)
+        {
             mYAxisBoundsStatus = AxisBoundsStatus.FIX;
         }
     }
@@ -1165,18 +1381,22 @@ public class Viewport {
     /**
      * forces the viewport to scroll to the end
      * of the range by keeping the current viewport size.
-     *
+     * <p>
      * Important: Only takes effect if x axis bounds are manual.
      *
      * @see #setXAxisBoundsManual(boolean)
      */
-    public void scrollToEnd() {
-        if (mXAxisBoundsManual) {
+    public void scrollToEnd()
+    {
+        if (mXAxisBoundsManual)
+        {
             double size = mCurrentViewport.width();
             mCurrentViewport.right = mCompleteRange.right;
             mCurrentViewport.left = mCompleteRange.right - size;
             mGraphView.onDataChanged(true, false);
-        } else {
+        }
+        else
+        {
             Log.w("GraphView", "scrollToEnd works only with manual x axis bounds");
         }
     }
@@ -1184,7 +1404,8 @@ public class Viewport {
     /**
      * @return the listener when there is one registered.
      */
-    public OnXAxisBoundsChangedListener getOnXAxisBoundsChangedListener() {
+    public OnXAxisBoundsChangedListener getOnXAxisBoundsChangedListener()
+    {
         return mOnXAxisBoundsChangedListener;
     }
 
@@ -1195,7 +1416,8 @@ public class Viewport {
      *
      * @param l the listener to use
      */
-    public void setOnXAxisBoundsChangedListener(OnXAxisBoundsChangedListener l) {
+    public void setOnXAxisBoundsChangedListener(OnXAxisBoundsChangedListener l)
+    {
         mOnXAxisBoundsChangedListener = l;
     }
 
@@ -1205,7 +1427,8 @@ public class Viewport {
      *
      * @param drawBorder true to draw the border
      */
-    public void setDrawBorder(boolean drawBorder) {
+    public void setDrawBorder(boolean drawBorder)
+    {
         this.mDrawBorder = drawBorder;
     }
 
@@ -1213,11 +1436,13 @@ public class Viewport {
      * the border color used. will be ignored when
      * a custom paint is set.
      *
-     * @see #setDrawBorder(boolean)
      * @return border color. by default the grid color is used
+     * @see #setDrawBorder(boolean)
      */
-    public int getBorderColor() {
-        if (mBorderColor != null) {
+    public int getBorderColor()
+    {
+        if (mBorderColor != null)
+        {
             return mBorderColor;
         }
         return mGraphView.getGridLabelRenderer().getGridColor();
@@ -1229,7 +1454,8 @@ public class Viewport {
      *
      * @param borderColor null to reset
      */
-    public void setBorderColor(Integer borderColor) {
+    public void setBorderColor(Integer borderColor)
+    {
         this.mBorderColor = borderColor;
     }
 
@@ -1237,10 +1463,11 @@ public class Viewport {
      * custom paint to use for the border. border color
      * will be ignored
      *
-     * @see #setDrawBorder(boolean)
      * @param borderPaint
+     * @see #setDrawBorder(boolean)
      */
-    public void setBorderPaint(Paint borderPaint) {
+    public void setBorderPaint(Paint borderPaint)
+    {
         this.mBorderPaint = borderPaint;
     }
 
@@ -1249,24 +1476,31 @@ public class Viewport {
      *
      * @param scrollableY true to activate
      */
-    public void setScrollableY(boolean scrollableY) {
+    public void setScrollableY(boolean scrollableY)
+    {
         this.scrollableY = scrollableY;
     }
 
     /**
      * the reference number to generate the labels
-     * @return  by default 0, only when manual bounds and no human rounding
-     *          is active, the min y value is returned
+     *
+     * @return by default 0, only when manual bounds and no human rounding
+     * is active, the min y value is returned
      */
-    protected double getReferenceY() {
+    protected double getReferenceY()
+    {
         // if the bounds is manual then we take the
         // original manual min y value as reference
-        if (isYAxisBoundsManual() && !mGraphView.getGridLabelRenderer().isHumanRoundingY()) {
-            if (Double.isNaN(referenceY)) {
+        if (isYAxisBoundsManual() && !mGraphView.getGridLabelRenderer().isHumanRoundingY())
+        {
+            if (Double.isNaN(referenceY))
+            {
                 referenceY = getMinY(false);
             }
             return referenceY;
-        } else {
+        }
+        else
+        {
             // starting from 0 so that the steps have nice numbers
             return 0;
         }
@@ -1279,12 +1513,15 @@ public class Viewport {
      *
      * @param scalableY true to activate
      */
-    public void setScalableY(boolean scalableY) {
-        if (scalableY) {
+    public void setScalableY(boolean scalableY)
+    {
+        if (scalableY)
+        {
             this.scrollableY = true;
             setScalable(true);
 
-            if (android.os.Build.VERSION.SDK_INT < 11) {
+            if (android.os.Build.VERSION.SDK_INT < 11)
+            {
                 Log.w("GraphView", "Vertical scaling requires minimum Android 3.0 (API Level 11)");
             }
         }
@@ -1296,7 +1533,8 @@ public class Viewport {
      * 0 means use the bounds of the actual data that is
      * available
      */
-    public double getMaxXAxisSize() {
+    public double getMaxXAxisSize()
+    {
         return mMaxXAxisSize;
     }
 
@@ -1305,7 +1543,8 @@ public class Viewport {
      * 0 means use the bounds of the actual data that is
      * available
      */
-    public double getMaxYAxisSize() {
+    public double getMaxYAxisSize()
+    {
         return mMaxYAxisSize;
     }
 
@@ -1317,7 +1556,8 @@ public class Viewport {
      *
      * @param mMaxXAxisViewportSize maximum size of viewport
      */
-    public void setMaxXAxisSize(double mMaxXAxisViewportSize) {
+    public void setMaxXAxisSize(double mMaxXAxisViewportSize)
+    {
         this.mMaxXAxisSize = mMaxXAxisViewportSize;
     }
 
@@ -1329,7 +1569,8 @@ public class Viewport {
      *
      * @param mMaxYAxisViewportSize maximum size of viewport
      */
-    public void setMaxYAxisSize(double mMaxYAxisViewportSize) {
+    public void setMaxYAxisSize(double mMaxYAxisViewportSize)
+    {
         this.mMaxYAxisSize = mMaxYAxisViewportSize;
     }
 
@@ -1337,7 +1578,7 @@ public class Viewport {
      * minimal viewport used for scaling and scrolling.
      * this is used if the data that is available is
      * less then the viewport that we want to be able to display.
-     *
+     * <p>
      * if Double.NaN is used, then this value is ignored
      *
      * @param minX
@@ -1345,7 +1586,8 @@ public class Viewport {
      * @param minY
      * @param maxY
      */
-    public void setMinimalViewport(double minX, double maxX, double minY, double maxY) {
-       mMinimalViewport.set(minX, maxY, maxX, minY);
+    public void setMinimalViewport(double minX, double maxX, double minY, double maxY)
+    {
+        mMinimalViewport.set(minX, maxY, maxX, minY);
     }
 }
