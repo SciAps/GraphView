@@ -31,10 +31,12 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.jjoe64.graphview.series.BaseSeries;
+import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.Series;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -115,7 +117,12 @@ public class GraphView extends View {
     private List<Series> mSeries;
 
     /**
-     * the renderer for the grid and labels
+     * A back up of mSeries's data, used to reconstruct mSeries to its linear state
+     * after using log scale mode.
+     */
+    private ArrayList<ArrayList<DataPoint>> backUpData;
+    /**
+     * the renderer for the grid and xlabels
      */
     private GridLabelRenderer mGridLabelRenderer;
 
@@ -165,6 +172,7 @@ public class GraphView extends View {
 
     private CursorMode mCursorMode;
 
+    private boolean mLogScaleMode;
     /**
      * Initialize the GraphView view
      * @param context
@@ -219,6 +227,8 @@ public class GraphView extends View {
         mTapDetector = new TapDetector();
 
         loadStyles();
+
+        mLogScaleMode = false;
     }
 
     /**
@@ -293,28 +303,34 @@ public class GraphView extends View {
      *
      * @param canvas
      */
-    protected void drawGraphElements(Canvas canvas) {
+    protected void drawGraphElements(Canvas canvas)
+    {
         // must be in hardware accelerated mode
-        if (android.os.Build.VERSION.SDK_INT >= 11 && !canvas.isHardwareAccelerated()) {
+        if (android.os.Build.VERSION.SDK_INT >= 11 && !canvas.isHardwareAccelerated())
+        {
             // just warn about it, because it is ok when making a snapshot
-            Log.w("GraphView", "GraphView should be used in hardware accelerated mode." +
-                    "You can use android:hardwareAccelerated=\"true\" on your activity. Read this for more info:" +
-                    "https://developer.android.com/guide/topics/graphics/hardware-accel.html");
+            Log.w("GraphView", "GraphView should be used in hardware accelerated mode." + "You can use android:hardwareAccelerated=\"true\" on your activity. Read this for more info:" + "https://developer.android.com/guide/topics/graphics/hardware-accel.html");
         }
 
         drawTitle(canvas);
         mViewport.drawFirst(canvas);
         mGridLabelRenderer.draw(canvas);
-        for (Series s : mSeries) {
+
+        for (Series s : mSeries)
+        {
             s.draw(this, canvas, false);
         }
-        if (mSecondScale != null) {
-            for (Series s : mSecondScale.getSeries()) {
+
+        if (mSecondScale != null)
+        {
+            for (Series s : mSecondScale.getSeries())
+            {
                 s.draw(this, canvas, true);
             }
         }
 
-        if (mCursorMode != null) {
+        if (mCursorMode != null)
+        {
             mCursorMode.draw(canvas);
         }
 
@@ -641,11 +657,11 @@ public class GraphView extends View {
             mCursorMode = null;
             invalidate();
         }
-        for (Series series : mSeries) {
-            if (series instanceof BaseSeries) {
-                ((BaseSeries) series).clearCursorModeCache();
+            for (Series series : mSeries) {
+                if (series instanceof BaseSeries) {
+                    ((BaseSeries) series).clearCursorModeCache();
+                }
             }
-        }
     }
 
     public CursorMode getCursorMode() {
@@ -654,5 +670,98 @@ public class GraphView extends View {
 
     public boolean isCursorMode() {
         return mIsCursorMode;
+    }
+
+    /**
+     * Convert graph to logarithic scale instead of linear scale. This method will not
+     * work if there is no Series added.
+     */
+    public void toLogScale()
+    {
+        if (mSeries.isEmpty()) return;
+        backUpData = new ArrayList<ArrayList<DataPoint>>();
+        double maxY = 0;
+        for (Series s : mSeries)
+        {
+            Iterator<DataPoint> iterator = s.getValues(s.getLowestValueX(), s.getHighestValueX());
+            ArrayList<DataPoint> dataPoints = new ArrayList<DataPoint>();
+            ArrayList<DataPoint> backUpDataPoints = new ArrayList<DataPoint>();
+            while (iterator.hasNext())
+            {
+                DataPoint currentPoint = iterator.next();
+                backUpDataPoints.add(new DataPoint(currentPoint.getX(),currentPoint.getY()));
+                double currentY = currentPoint.getY();
+                if (currentY > maxY) maxY = currentY;
+                currentY = Math.log10(currentY);
+                if (currentY < 0 || ((Double)currentY).isInfinite()) currentY = 0;
+                DataPoint temp = new DataPoint(currentPoint.getX(), currentY);
+                dataPoints.add(temp);
+            }
+            backUpData.add(backUpDataPoints);
+            ((BaseSeries) s).resetData(toDataPointArray(dataPoints));
+        }
+        this.getViewport().setYAxisBoundsManual(true);
+        this.getViewport().setMaxY(Math.floor(Math.log10(maxY)));
+        this.getViewport().setMinY(0);
+        adjustAxisLabel();
+        this.onDataChanged(false,false);
+        this.mLogScaleMode = true;
+    }
+
+    private DataPoint[] toDataPointArray(ArrayList<DataPoint> points)
+    {
+        DataPoint[] dataPoints = new DataPoint[points.size()];
+        for (int j = 0; j < points.size(); j++)
+        {
+            dataPoints[j] = points.get(j);
+        }
+        return dataPoints;
+    }
+
+    private void adjustAxisLabel()
+    {
+        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                if (isValueX)
+                {
+                    return super.formatLabel(value, isValueX);
+                } else
+                {
+                    String yValue = super.formatLabel(value, isValueX).replaceAll(",", ".");
+                    if (yValue.compareToIgnoreCase("-∞") == 0) return "0";
+                    Float yLogValue = (float) Math.floor((Math.pow(10, Float.valueOf(yValue))));
+                    return (value <= 0) ? "-∞" : String.valueOf(yLogValue);
+                }
+            }
+        });
+    }
+
+    public boolean isLogScaleMode()
+    {
+        return this.mLogScaleMode;
+    }
+
+    public void toLinearScale()
+    {
+        for (int i = 0; i < mSeries.size(); i++)
+        {
+            DataPoint[] data = toDataPointArray(backUpData.get(i));
+            Series s = mSeries.get(i);
+            ((BaseSeries) s).resetData(data);
+        }
+        this.getViewport().setYAxisBoundsManual(false);
+        this.mLogScaleMode = false;
+        this.onDataChanged(false, false);
+        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                return super.formatLabel(value, isValueX);
+            }
+        });
     }
 }
