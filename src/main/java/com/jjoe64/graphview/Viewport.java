@@ -283,6 +283,18 @@ public class Viewport
         mGraphView.postInvalidate();
     }
 
+    private boolean mCanUsePinchGesture = true;
+
+    /**
+     * Determines if we can use pinch gesture to scale
+     *
+     * @param canUsePinchGesture Should be true, if we want to use pinch gesture. Otherwise, false.
+     */
+    public void canUsePinchGesture(boolean canUsePinchGesture)
+    {
+        mCanUsePinchGesture = canUsePinchGesture;
+    }
+
     /**
      * listener for the scale gesture
      */
@@ -297,6 +309,11 @@ public class Viewport
         @Override
         public boolean onScale(ScaleGestureDetector detector)
         {
+            if (!mCanUsePinchGesture)
+            {
+                return false;
+            }
+
             // --- horizontal scaling ---
             float scaleSpanX;
             if (scalableY)
@@ -330,6 +347,11 @@ public class Viewport
         @Override
         public boolean onScaleBegin(ScaleGestureDetector detector)
         {
+            if (!mCanUsePinchGesture)
+            {
+                return false;
+            }
+
             // cursor mode
             if (mGraphView.isCursorMode())
             {
