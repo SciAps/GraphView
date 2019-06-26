@@ -253,7 +253,9 @@ public class GraphView extends View {
      */
     public void addSeries(Series s) {
         s.onGraphViewAttached(this);
-        mSeries.add(s);
+        synchronized (this) {
+            mSeries.add(s);
+        }
         onDataChanged(false, false);
     }
 
@@ -465,13 +467,15 @@ public class GraphView extends View {
         boolean a = super.onTouchEvent(event);
 
         // is it a click?
-        if (mTapDetector.onTouchEvent(event)) {
-            for (Series s : mSeries) {
-                s.onTap(event.getX(), event.getY());
-            }
-            if (mSecondScale != null) {
-                for (Series s : mSecondScale.getSeries()) {
+        synchronized (this) {
+            if (mTapDetector.onTouchEvent(event)) {
+                for (Series s : mSeries) {
                     s.onTap(event.getX(), event.getY());
+                }
+                if (mSecondScale != null) {
+                    for (Series s : mSecondScale.getSeries()) {
+                        s.onTap(event.getX(), event.getY());
+                    }
                 }
             }
         }
@@ -587,7 +591,9 @@ public class GraphView extends View {
      * Removes all series of the graph.
      */
     public void removeAllSeries() {
-        mSeries.clear();
+        synchronized (this) {
+            mSeries.clear();
+        }
         onDataChanged(false, false);
     }
 
@@ -602,7 +608,9 @@ public class GraphView extends View {
      * @param series
      */
     public void removeSeries(Series<?> series) {
-        mSeries.remove(series);
+        synchronized (this) {
+            mSeries.remove(series);
+        }
         onDataChanged(false, false);
     }
 
@@ -746,11 +754,12 @@ public class GraphView extends View {
 
     public void toLinearScale()
     {
-        for (int i = 0; i < mSeries.size(); i++)
-        {
-            DataPoint[] data = toDataPointArray(backUpData.get(i));
-            Series s = mSeries.get(i);
-            ((BaseSeries) s).resetData(data);
+        synchronized (this) {
+            for (int i = 0; i < mSeries.size(); i++) {
+                DataPoint[] data = toDataPointArray(backUpData.get(i));
+                Series s = mSeries.get(i);
+                ((BaseSeries) s).resetData(data);
+            }
         }
         this.getViewport().setYAxisBoundsManual(false);
         this.mLogScaleMode = false;
@@ -763,5 +772,6 @@ public class GraphView extends View {
                 return super.formatLabel(value, isValueX);
             }
         });
+
     }
 }
