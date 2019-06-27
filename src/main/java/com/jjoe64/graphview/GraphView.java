@@ -18,6 +18,7 @@ package com.jjoe64.graphview;
 
 import android.content.Context;
 import android.content.Intent;
+import android.gesture.Gesture;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -27,6 +28,8 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -173,6 +176,11 @@ public class GraphView extends View {
     private CursorMode mCursorMode;
 
     private boolean mLogScaleMode;
+
+    private GestureDetector mGestureDetector;
+
+    private boolean isLongPress = false;
+
     /**
      * Initialize the GraphView view
      * @param context
@@ -229,6 +237,48 @@ public class GraphView extends View {
         loadStyles();
 
         mLogScaleMode = false;
+
+        mGestureDetector = new GestureDetector(getContext(), new SimpleOnGestureListener() {
+
+            @Override
+            public boolean onDown(MotionEvent event) {
+                for (Series s : mSeries) {
+                    s.onTap(event.getX(), event.getY());
+                }
+                if (mSecondScale != null) {
+                    for (Series s : mSecondScale.getSeries()) {
+                        s.onTap(event.getX(), event.getY());
+                    }
+                }
+                if (mOnGraphViewListener != null) {
+                    mOnGraphViewListener.onGraphViewPointTouched(GraphView.this);
+                }
+                return true;
+            }
+
+            @Override
+            public void onShowPress(MotionEvent e) {
+                if (mOnGraphViewListener != null) {
+                    mOnGraphViewListener.onGraphViewPointShowed(GraphView.this);
+                }
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+                isLongPress = true;
+            }
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                if (isLongPress) {
+                    return true;
+                }
+                if (mOnGraphViewListener != null) {
+                    mOnGraphViewListener.onGraphViewPointFinishedTouch(GraphView.this);
+                }
+                return super.onSingleTapUp(e);
+            }
+        });
     }
 
     /**
@@ -237,6 +287,40 @@ public class GraphView extends View {
     protected void loadStyles() {
         mStyles.titleColor = mGridLabelRenderer.getHorizontalLabelsColor();
         mStyles.titleTextSize = mGridLabelRenderer.getTextSize();
+    }
+
+
+    private OnGraphViewListener mOnGraphViewListener;
+
+    public interface OnGraphViewListener {
+        /**
+         * Notified when a graphview was touched
+         *
+         * @param touchedGraphView The touched GraphView
+         */
+        void onGraphViewPointTouched(GraphView touchedGraphView);
+
+        /**
+         * Performed when the user has performed a tap but not released a finger yet.
+         *
+         * @param touchedGraphView The touched GraphView
+         */
+        void onGraphViewPointShowed(GraphView touchedGraphView);
+
+        /**
+         * Performed when the user released a finger
+         *
+         * @param touchedGraphView The touched GraphView
+         */
+        void onGraphViewPointFinishedTouch(GraphView touchedGraphView);
+    }
+
+    /**
+     * Sets GraphView Listener
+     * @param listener The instance of `OnGraphViewListener` that will provide output events
+     */
+    public void setOnGraphViewListener(OnGraphViewListener listener) {
+        mOnGraphViewListener = listener;
     }
 
     /**
@@ -253,9 +337,7 @@ public class GraphView extends View {
      */
     public void addSeries(Series s) {
         s.onGraphViewAttached(this);
-        synchronized (this) {
-            mSeries.add(s);
-        }
+        mSeries.add(s);
         onDataChanged(false, false);
     }
 
@@ -463,24 +545,33 @@ public class GraphView extends View {
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        boolean b = mViewport.onTouchEvent(event);
-        boolean a = super.onTouchEvent(event);
-
-        // is it a click?
-        synchronized (this) {
-            if (mTapDetector.onTouchEvent(event)) {
-                for (Series s : mSeries) {
-                    s.onTap(event.getX(), event.getY());
-                }
-                if (mSecondScale != null) {
-                    for (Series s : mSecondScale.getSeries()) {
-                        s.onTap(event.getX(), event.getY());
-                    }
-                }
+        if (event.getAction() == MotionEvent.ACTION_UP && isLongPress) {
+            isLongPress = false;
+            if (mOnGraphViewListener != null) {
+                mOnGraphViewListener.onGraphViewPointFinishedTouch(GraphView.this);
             }
+            return mGestureDetector.onTouchEvent(event) || mViewport.onTouchEvent(event);
         }
-
-        return b || a;
+        return mGestureDetector.onTouchEvent(event) || mViewport.onTouchEvent(event);
+// Anton Savinov: We won't use helper class as TapDetector
+//        boolean b = mViewport.onTouchEvent(event);
+//        boolean a = super.onTouchEvent(event);
+//
+//        // is it a click?
+//        synchronized (this) {
+//            if (mTapDetector.onTouchEvent(event)) {
+//                for (Series s : mSeries) {
+//                    s.onTap(event.getX(), event.getY());
+//                }
+//                if (mSecondScale != null) {
+//                    for (Series s : mSecondScale.getSeries()) {
+//                        s.onTap(event.getX(), event.getY());
+//                    }
+//                }
+//            }
+//        }
+//
+//        return b || a;
     }
 
     /**
@@ -591,9 +682,7 @@ public class GraphView extends View {
      * Removes all series of the graph.
      */
     public void removeAllSeries() {
-        synchronized (this) {
-            mSeries.clear();
-        }
+        mSeries.clear();
         onDataChanged(false, false);
     }
 
@@ -608,9 +697,7 @@ public class GraphView extends View {
      * @param series
      */
     public void removeSeries(Series<?> series) {
-        synchronized (this) {
-            mSeries.remove(series);
-        }
+        mSeries.remove(series);
         onDataChanged(false, false);
     }
 
@@ -665,11 +752,11 @@ public class GraphView extends View {
             mCursorMode = null;
             invalidate();
         }
-            for (Series series : mSeries) {
-                if (series instanceof BaseSeries) {
-                    ((BaseSeries) series).clearCursorModeCache();
-                }
+        for (Series series : mSeries) {
+            if (series instanceof BaseSeries) {
+                ((BaseSeries) series).clearCursorModeCache();
             }
+        }
     }
 
     public CursorMode getCursorMode() {
@@ -754,12 +841,10 @@ public class GraphView extends View {
 
     public void toLinearScale()
     {
-        synchronized (this) {
-            for (int i = 0; i < mSeries.size(); i++) {
-                DataPoint[] data = toDataPointArray(backUpData.get(i));
-                Series s = mSeries.get(i);
-                ((BaseSeries) s).resetData(data);
-            }
+        for (int i = 0; i < mSeries.size(); i++) {
+            DataPoint[] data = toDataPointArray(backUpData.get(i));
+            Series s = mSeries.get(i);
+            ((BaseSeries) s).resetData(data);
         }
         this.getViewport().setYAxisBoundsManual(false);
         this.mLogScaleMode = false;
