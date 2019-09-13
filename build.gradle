@@ -1,24 +1,10 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://raw.githubusercontent.com/SciAps/nexus/master/"
-        }
-        mavenCentral()
-        google()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
-    }
-}
-
 apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 22
-    buildToolsVersion '27.0.3'
 
     defaultConfig {
-        minSdkVersion 22
+        minSdkVersion 17
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 22
         versionCode 1
