@@ -397,6 +397,7 @@ public class GraphView extends View {
         }
 
         drawTitle(canvas);
+        mGridLabelRenderer.initSizes(canvas);
         mViewport.drawFirst(canvas);
         mGridLabelRenderer.draw(canvas);
 
