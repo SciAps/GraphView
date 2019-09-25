@@ -1085,30 +1085,27 @@ public class GridLabelRenderer {
     }
 
     /**
+     * do the width calculation of the labels
+     * @param canvas canvas
+     */
+    public void initSizes(Canvas canvas) {
+        if (mLabelHorizontalWidth == null) {
+            calcLabelHorizontalSize(canvas);
+        }
+        if (mLabelVerticalWidth == null) {
+            calcLabelVerticalSize(canvas);
+        }
+        if (mLabelVerticalSecondScaleWidth == null) {
+            calcLabelVerticalSecondScaleSize(canvas);
+        }
+    }
+
+    /**
      * do the drawing of the grid
      * and labels
      * @param canvas canvas
      */
     public void draw(Canvas canvas) {
-        boolean labelSizeChanged = false;
-        if (mLabelHorizontalWidth == null) {
-            calcLabelHorizontalSize(canvas);
-            labelSizeChanged = true;
-        }
-        if (mLabelVerticalWidth == null) {
-            calcLabelVerticalSize(canvas);
-            labelSizeChanged = true;
-        }
-        if (mLabelVerticalSecondScaleWidth == null) {
-            calcLabelVerticalSecondScaleSize(canvas);
-            labelSizeChanged = true;
-        }
-        if (labelSizeChanged) {
-            // redraw directly
-            mGraphView.drawGraphElements(canvas);
-            return;
-        }
-
         if (!mIsAdjusted) {
             adjustSteps();
         }
@@ -1141,7 +1138,7 @@ public class GridLabelRenderer {
             mPaintAxisTitle.setColor(getHorizontalAxisTitleColor());
             mPaintAxisTitle.setTextSize(getHorizontalAxisTitleTextSize());
             float x = canvas.getWidth() / 2;
-            float y = canvas.getHeight() - mStyles.padding;
+            float y = canvas.getHeight();
             canvas.drawText(mHorizontalAxisTitle, x, y, mPaintAxisTitle);
         }
     }
