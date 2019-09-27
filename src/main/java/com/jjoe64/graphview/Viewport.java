@@ -74,6 +74,13 @@ public class Viewport
      */
     private RectD mMinimalViewport = new RectD(Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 
+
+    /**
+     * It is used for determining the first scroll event.
+     * The first scroll event should be ignored because of bad distanceX.
+     */
+    private boolean mIsFirstScrollEvent = false;
+
     /**
      * the reference number to generate the labels
      *
@@ -423,6 +430,11 @@ public class Viewport
             if (!mIsScrollable || mScalingActive)
             {
                 return false;
+            }
+            // The first scroll event should be ignored because of bad distanceX
+            if (mIsFirstScrollEvent) {
+                mIsFirstScrollEvent = false;
+                return true;
             }
 
             // Scrolling uses math based on the viewport (as opposed to math using pixels).
@@ -807,6 +819,15 @@ public class Viewport
             if (event.getAction() == MotionEvent.ACTION_UP)
             {
                 b |= mGraphView.getCursorMode().onUp(event);
+            }
+        }
+        else
+        {
+            // always handle touch event completion
+            if (event.getAction() == MotionEvent.ACTION_CANCEL || event.getAction() == MotionEvent.ACTION_UP)
+            {
+                // Used to ignore the first scroll event with bad distanceX
+                mIsFirstScrollEvent = true;
             }
         }
         return b;
