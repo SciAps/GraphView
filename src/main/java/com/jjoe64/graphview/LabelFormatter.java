@@ -16,6 +16,8 @@
  */
 package com.jjoe64.graphview;
 
+import java.text.NumberFormat;
+
 /**
  * Interface to use as label formatter.
  * Implement this in order to generate
@@ -35,6 +37,20 @@ public interface LabelFormatter {
      * @return the formatted number as string
      */
     public String formatLabel(double value, boolean isValueX);
+
+    /**
+     * get a number format for x axis
+     *
+     * @return an object of NumberFormat type for x axis
+     */
+    public NumberFormat getXFormat();
+
+    /**
+     * get a number format for y axis
+     *
+     * @return an object of NumberFormat type for y axis
+     */
+    public NumberFormat getYFormat();
 
     /**
      * will be called in order to have a

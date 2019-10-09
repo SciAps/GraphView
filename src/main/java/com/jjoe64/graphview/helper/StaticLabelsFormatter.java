@@ -21,6 +21,8 @@ import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.LabelFormatter;
 import com.jjoe64.graphview.Viewport;
 
+import java.text.NumberFormat;
+
 /**
  * Use this label formatter to show static labels.
  * Static labels are not bound to the data. It is typical used
@@ -193,6 +195,26 @@ public class StaticLabelsFormatter implements LabelFormatter {
         } else {
             return mDynamicLabelFormatter.formatLabel(value, isValueX);
         }
+    }
+
+    /**
+     * Overridden method from LabelFormatter interface, but not supported here
+     *
+     * @return null
+     */
+    @Override
+    public NumberFormat getXFormat() {
+        return null;
+    }
+
+    /**
+     * Overridden method from LabelFormatter interface, but not supported here
+     *
+     * @return null
+     */
+    @Override
+    public NumberFormat getYFormat() {
+        return null;
     }
 
     /**
