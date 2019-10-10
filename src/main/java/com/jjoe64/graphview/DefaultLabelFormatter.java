@@ -63,6 +63,24 @@ public class DefaultLabelFormatter implements LabelFormatter {
     }
 
     /**
+     * get a number format for x axis
+     *
+     * @return an object of NumberFormat type for x axis
+     */
+    public NumberFormat getXFormat() {
+        return mNumberFormatter[1];
+    }
+
+    /**
+     * get a number format for y axis
+     *
+     * @return an object of NumberFormat type for y axis
+     */
+    public NumberFormat getYFormat() {
+        return mNumberFormatter[0];
+    }
+
+    /**
      * @param viewport the viewport of the graph
      */
     @Override

@@ -749,12 +749,14 @@ public class GridLabelRenderer {
             }
             double oldSteps = d2 - d1;
             if (oldSteps > 0) {
-                double newSteps = Double.NaN;
-
-                if (oldSteps > exactSteps) {
-                    newSteps = oldSteps / 2;
-                } else if (oldSteps < exactSteps) {
-                    newSteps = oldSteps * 2;
+                double newSteps = (maxY - minY) / (numVerticalLabels - 1);
+                double divider = 0.1;
+                int numFractionDigits = getLabelFormatter().getYFormat().getMaximumFractionDigits();
+                for (int k = 0; k < numFractionDigits; k++) {
+                    divider = divider / 10;
+                }
+                if (newSteps < divider ) {
+                    newSteps = oldSteps;
                 }
 
                 // only if there wont be more than numLabels
@@ -773,7 +775,7 @@ public class GridLabelRenderer {
                     shouldChange = true;
                 }
 
-                if (newSteps != Double.NaN && shouldChange && numStepsNew <= numVerticalLabels) {
+                if (newSteps > 0 && shouldChange && numStepsNew <= numVerticalLabels) {
                     exactSteps = newSteps;
                 } else {
                     // try to stay to the old steps
