@@ -797,7 +797,13 @@ public class GridLabelRenderer {
         // now we have our labels bounds
         if (changeBounds) {
             mGraphView.getViewport().setMinY(newMinY);
-            mGraphView.getViewport().setMaxY(Math.max(maxY, newMinY + (numVerticalLabels - 1) * exactSteps));
+            // Adopt the number of vertical lines to exact steps.
+            // Discard the value of 1 or lower as invalid for negligible scale values.
+            int numLabels = (int) Math.ceil(maxY / exactSteps);
+            if (numLabels > 1) {
+                numVerticalLabels = numLabels;
+            }
+            mGraphView.getViewport().setMaxY(Math.max(maxY, newMinY + numVerticalLabels * exactSteps));
             mGraphView.getViewport().mYAxisBoundsStatus = Viewport.AxisBoundsStatus.AUTO_ADJUSTED;
         }
 
