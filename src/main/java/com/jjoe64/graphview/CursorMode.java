@@ -129,7 +129,7 @@ public class CursorMode {
             txt.append(s.getTitle());
             txt.append(": ");
         }
-        txt.append(mGraphView.getGridLabelRenderer().getLabelFormatter().formatLabel(value.getY(), false));
+        txt.append(mGraphView.getGridLabelRenderer().getVerticalLabelFormatter().formatLabel(value.getY(), false));
         return txt.toString();
     }
 
@@ -184,7 +184,7 @@ public class CursorMode {
         canvas.drawRoundRect(new RectF(lLeft, lTop, lRight, lBottom), 8, 8, mRectPaint);
 
         mTextPaint.setFakeBoldText(true);
-        canvas.drawText(mGraphView.getGridLabelRenderer().getLabelFormatter().formatLabel(mCurrentSelectionX, true), lLeft+mStyles.padding, lTop+mStyles.padding/2+mStyles.textSize, mTextPaint);
+        canvas.drawText(mGraphView.getGridLabelRenderer().getVerticalLabelFormatter().formatLabel(mCurrentSelectionX, true), lLeft+mStyles.padding, lTop+mStyles.padding/2+mStyles.textSize, mTextPaint);
 
         mTextPaint.setFakeBoldText(false);
 

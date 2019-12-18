@@ -18,7 +18,6 @@ package com.jjoe64.graphview;
 
 import android.content.Context;
 import android.content.Intent;
-import android.gesture.Gesture;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -816,7 +815,24 @@ public class GraphView extends View {
 
     private void adjustAxisLabel()
     {
-        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        this.getGridLabelRenderer().setVerticalLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                if (isValueX)
+                {
+                    return super.formatLabel(value, isValueX);
+                } else
+                {
+                    String yValue = super.formatLabel(value, isValueX).replaceAll(",", ".");
+                    if (yValue.compareToIgnoreCase("-∞") == 0) return "0";
+                    Float yLogValue = (float) Math.floor((Math.pow(10, Float.valueOf(yValue))));
+                    return (value <= 0) ? "-∞" : String.valueOf(yLogValue);
+                }
+            }
+        });
+        this.getGridLabelRenderer().setHorizontalLabelFormatter(new DefaultLabelFormatter()
         {
             @Override
             public String formatLabel(double value, boolean isValueX)
@@ -850,7 +866,7 @@ public class GraphView extends View {
         this.getViewport().setYAxisBoundsManual(false);
         this.mLogScaleMode = false;
         this.onDataChanged(false, false);
-        this.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter()
+        this.getGridLabelRenderer().setVerticalLabelFormatter(new DefaultLabelFormatter()
         {
             @Override
             public String formatLabel(double value, boolean isValueX)
@@ -858,6 +874,13 @@ public class GraphView extends View {
                 return super.formatLabel(value, isValueX);
             }
         });
-
+        this.getGridLabelRenderer().setHorizontalLabelFormatter(new DefaultLabelFormatter()
+        {
+            @Override
+            public String formatLabel(double value, boolean isValueX)
+            {
+                return super.formatLabel(value, isValueX);
+            }
+        });
     }
 }
