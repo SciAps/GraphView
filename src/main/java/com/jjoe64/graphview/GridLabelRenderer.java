@@ -288,11 +288,16 @@ public class GridLabelRenderer {
     private Integer mLabelHorizontalHeight;
 
     /**
-     * the label formatter, that converts
+     * the vertical label formatter, that converts
      * the raw numbers to strings
      */
-    private LabelFormatter mLabelFormatter;
+    private LabelFormatter mVerticalLabelFormatter;
 
+    /**
+     * the horizontal label formatter, that converts
+     * the raw numbers to strings
+     */
+    private LabelFormatter mHorizontalLabelFormatter;
     /**
      * the title of the horizontal axis
      */
@@ -348,7 +353,8 @@ public class GridLabelRenderer {
      */
     public GridLabelRenderer(GraphView graphView) {
         mGraphView = graphView;
-        setLabelFormatter(new DefaultLabelFormatter());
+        setVerticalLabelFormatter(new DefaultLabelFormatter());
+        setHorizontalLabelFormatter(new DefaultLabelFormatter());
         mStyles = new Styles();
         resetStyles();
         mNumVerticalLabels = 5;
@@ -751,7 +757,7 @@ public class GridLabelRenderer {
             if (oldSteps > 0) {
                 double newSteps = (maxY - minY) / (numVerticalLabels - 1);
                 double divider = 0.1;
-                int numFractionDigits = getLabelFormatter().getYFormat().getMaximumFractionDigits();
+                int numFractionDigits = getVerticalLabelFormatter().getYFormat().getMaximumFractionDigits();
                 for (int k = 0; k < numFractionDigits; k++) {
                     divider = divider / 10;
                 }
@@ -994,7 +1000,7 @@ public class GridLabelRenderer {
      */
     protected void calcLabelVerticalSize(Canvas canvas) {
         // test label with first and last label
-        String testLabel = mLabelFormatter.formatLabel(mGraphView.getViewport().getMaxY(false), false);
+        String testLabel = mVerticalLabelFormatter.formatLabel(mGraphView.getViewport().getMaxY(false), false);
         if (testLabel == null) testLabel = "";
 
         Rect textBounds = new Rect();
@@ -1002,7 +1008,7 @@ public class GridLabelRenderer {
         mLabelVerticalWidth = textBounds.width();
         mLabelVerticalHeight = textBounds.height();
 
-        testLabel = mLabelFormatter.formatLabel(mGraphView.getViewport().getMinY(false), false);
+        testLabel = mVerticalLabelFormatter.formatLabel(mGraphView.getViewport().getMinY(false), false);
         if (testLabel == null) testLabel = "";
 
         mPaintLabel.getTextBounds(testLabel, 0, testLabel.length(), textBounds);
@@ -1057,7 +1063,7 @@ public class GridLabelRenderer {
     protected void calcLabelHorizontalSize(Canvas canvas) {
         // test label
         double testX = ((mGraphView.getViewport().getMaxX(false) - mGraphView.getViewport().getMinX(false)) * 0.783) + mGraphView.getViewport().getMinX(false);
-        String testLabel = mLabelFormatter.formatLabel(testX, true);
+        String testLabel = mHorizontalLabelFormatter.formatLabel(testX, true);
         if (testLabel == null) {
             testLabel = "";
         }
@@ -1236,7 +1242,7 @@ public class GridLabelRenderer {
                 }
 
                 // multiline labels
-                String label = mLabelFormatter.formatLabel(e.getValue(), true);
+                String label = mHorizontalLabelFormatter.formatLabel(e.getValue(), true);
                 if (label == null) {
                     label = "";
                 }
@@ -1362,7 +1368,7 @@ public class GridLabelRenderer {
 
                 float y = posY;
 
-                String label = mLabelFormatter.formatLabel(e.getValue(), false);
+                String label = mVerticalLabelFormatter.formatLabel(e.getValue(), false);
                 if (label == null) {
                     label = "";
                 }
@@ -1567,20 +1573,37 @@ public class GridLabelRenderer {
     }
 
     /**
-     * @return  the label formatter, that converts
+     * @return  the vertical label formatter, that converts
      *          the raw numbers to strings
      */
-    public LabelFormatter getLabelFormatter() {
-        return mLabelFormatter;
+    public LabelFormatter getVerticalLabelFormatter() {
+        return mVerticalLabelFormatter;
     }
 
     /**
-     * @param mLabelFormatter   the label formatter, that converts
-     *                          the raw numbers to strings
+     * @return  the horizontal label formatter, that converts
+     *          the raw numbers to strings
      */
-    public void setLabelFormatter(LabelFormatter mLabelFormatter) {
-        this.mLabelFormatter = mLabelFormatter;
-        mLabelFormatter.setViewport(mGraphView.getViewport());
+    public LabelFormatter getHorizontalLabelFormatter() {
+        return mHorizontalLabelFormatter;
+    }
+
+    /**
+     * @param mVerticalLabelFormatter  the label formatter for a vertical axis,
+     *                                 that converts the raw numbers to strings
+     */
+    public void setVerticalLabelFormatter(LabelFormatter mVerticalLabelFormatter) {
+        this.mVerticalLabelFormatter = mVerticalLabelFormatter;
+        mVerticalLabelFormatter.setViewport(mGraphView.getViewport());
+    }
+
+    /**
+     * @param mHorizontalLabelFormatter  the label formatter for a vertical axis,
+     *                                 that converts the raw numbers to strings
+     */
+    public void setHorizontalLabelFormatter(LabelFormatter mHorizontalLabelFormatter) {
+        this.mHorizontalLabelFormatter = mHorizontalLabelFormatter;
+        mHorizontalLabelFormatter.setViewport(mGraphView.getViewport());
     }
 
     /**

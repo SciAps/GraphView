@@ -345,7 +345,7 @@ public class BarGraphSeries<E extends DataPointInterface> extends BaseSeries<E> 
 
                 mPaint.setColor(mValuesOnTopColor);
                 canvas.drawText(
-                        graphView.getGridLabelRenderer().getLabelFormatter().formatLabel(value.getY(), false)
+                        graphView.getGridLabelRenderer().getVerticalLabelFormatter().formatLabel(value.getY(), false)
                         , (float) (left+right)/2, (float) top, mPaint);
             }
 
