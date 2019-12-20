@@ -500,7 +500,7 @@ public class GraphView extends View {
      *          beginning of the graph viewport.
      */
     public int getGraphContentLeft() {
-        int border = getGridLabelRenderer().getStyles().padding;
+        int border = getGridLabelRenderer().getStyles().padding + getGridLabelRenderer().getStyles().verticalAxisTitlePadding;
         return border + getGridLabelRenderer().getLabelVerticalWidth() + getGridLabelRenderer().getVerticalAxisTitleWidth();
     }
 
@@ -519,7 +519,8 @@ public class GraphView extends View {
      */
     public int getGraphContentHeight() {
         int border = getGridLabelRenderer().getStyles().padding;
-        int graphheight = getHeight() - (2 * border) - getGridLabelRenderer().getLabelHorizontalHeight() - getTitleHeight();
+        int graphheight = getHeight() - (2 * border + getGridLabelRenderer().getStyles().horizontalAxisTitlePadding) -
+                getGridLabelRenderer().getLabelHorizontalHeight() - getTitleHeight();
         graphheight -= getGridLabelRenderer().getHorizontalAxisTitleHeight();
         return graphheight;
     }
@@ -529,7 +530,8 @@ public class GraphView extends View {
      */
     public int getGraphContentWidth() {
         int border = getGridLabelRenderer().getStyles().padding;
-        int graphwidth = getWidth() - (2 * border) - getGridLabelRenderer().getLabelVerticalWidth();
+        int graphwidth = getWidth() - (2 * border + getGridLabelRenderer().getStyles().horizontalAxisTitlePadding) -
+                getGridLabelRenderer().getLabelVerticalWidth();
         if (mSecondScale != null) {
             graphwidth -= getGridLabelRenderer().getLabelVerticalSecondScaleWidth();
             graphwidth -= mSecondScale.getVerticalAxisTitleTextSize();

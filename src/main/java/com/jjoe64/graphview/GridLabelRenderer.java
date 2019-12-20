@@ -107,6 +107,16 @@ public class GridLabelRenderer {
         public int padding;
 
         /**
+         * the padding around the grid and the horizontal title
+         */
+        public int horizontalAxisTitlePadding;
+
+        /**
+         * the padding around the grid and the vertical title
+         */
+        public int verticalAxisTitlePadding;
+
+        /**
          * font size of the vertical axis title
          */
         public float verticalAxisTitleTextSize;
@@ -377,6 +387,7 @@ public class GridLabelRenderer {
         int color2;
         int size;
         int size2;
+        int size3;
 
         TypedArray array = null;
         try {
@@ -396,6 +407,7 @@ public class GridLabelRenderer {
             size = 20;
             size2 = 20;
         }
+        size3 = 0;
 
         mStyles.verticalLabelsColor = color1;
         mStyles.verticalLabelsSecondScaleColor = color1;
@@ -403,6 +415,8 @@ public class GridLabelRenderer {
         mStyles.gridColor = color2;
         mStyles.textSize = size;
         mStyles.padding = size2;
+        mStyles.horizontalAxisTitlePadding = size3;
+        mStyles.verticalAxisTitlePadding = size3;
         mStyles.labelsSpace = (int) mStyles.textSize/5;
 
         mStyles.verticalLabelsAlign = Paint.Align.RIGHT;
@@ -1152,7 +1166,7 @@ public class GridLabelRenderer {
             mPaintAxisTitle.setColor(getHorizontalAxisTitleColor());
             mPaintAxisTitle.setTextSize(getHorizontalAxisTitleTextSize());
             float x = canvas.getWidth() / 2;
-            float y = canvas.getHeight();
+            float y = canvas.getHeight() - 2; // The magic number to adjust the horizontal title's bottom padding
             canvas.drawText(mHorizontalAxisTitle, x, y, mPaintAxisTitle);
         }
     }
@@ -1257,7 +1271,8 @@ public class GridLabelRenderer {
                 }
                 for (int li = 0; li < lines.length; li++) {
                     // for the last line y = height
-                    float y = (canvas.getHeight() - mStyles.padding - getHorizontalAxisTitleHeight()) - (lines.length - li - 1) * getTextSize() * 1.1f + mStyles.labelsSpace;
+                    float y = (canvas.getHeight() - mStyles.padding - mStyles.horizontalAxisTitlePadding -
+                            getHorizontalAxisTitleHeight()) - (lines.length - li - 1) * getTextSize() * 1.1f + mStyles.labelsSpace;
                     float x = mGraphView.getGraphContentLeft()+e.getKey();
                     if (mStyles.horizontalLabelsAngle > 0 && mStyles.horizontalLabelsAngle < 90f) {
                         canvas.save();
@@ -1364,7 +1379,7 @@ public class GridLabelRenderer {
                 } else if (getVerticalLabelsAlign() == Paint.Align.CENTER) {
                     labelsOffset = labelsWidth / 2;
                 }
-                labelsOffset += mStyles.padding + getVerticalAxisTitleWidth();
+                labelsOffset += mStyles.padding + mStyles.verticalAxisTitlePadding + getVerticalAxisTitleWidth();
 
                 float y = posY;
 
@@ -1505,10 +1520,24 @@ public class GridLabelRenderer {
     }
 
     /**
-     * @return the padding around the grid and labels
+     * @return the padding around the graph and labels
      */
     public int getPadding() {
         return mStyles.padding;
+    }
+
+    /**
+     * @return the padding around the grid and the horizontal label
+     */
+    public int getHorizontalAxisTitlePadding() {
+        return mStyles.horizontalAxisTitlePadding;
+    }
+
+    /**
+     * @return the padding around the grid and the vertical label
+     */
+    public int getVerticalAxisTitlePadding() {
+        return mStyles.verticalAxisTitlePadding;
     }
 
     /**
@@ -1570,6 +1599,20 @@ public class GridLabelRenderer {
      */
     public void setPadding(int padding) {
         mStyles.padding = padding;
+    }
+
+    /**
+     * @param padding the padding around the grid and the horizontal label
+     */
+    public void setHorizontalAxisTitlePadding(int padding) {
+        mStyles.horizontalAxisTitlePadding = padding;
+    }
+
+    /**
+     * @param padding the padding around the grid and the vertical label
+     */
+    public void setVerticalAxisTitlePadding(int padding) {
+        mStyles.verticalAxisTitlePadding = padding;
     }
 
     /**
