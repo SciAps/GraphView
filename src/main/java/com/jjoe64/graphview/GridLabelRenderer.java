@@ -725,7 +725,7 @@ public class GridLabelRenderer {
         }
 
         double minY = mGraphView.getViewport().getMinY(false);
-        double maxY = mGraphView.getViewport().getMaxY(false);
+        double maxY = mGraphView.getViewport().getMaxY(true);
 
         if (minY == maxY) {
             return false;
