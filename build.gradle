@@ -1,10 +1,10 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 31
 
     defaultConfig {
-        minSdkVersion 17
+        minSdkVersion 22
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 22
         versionCode 1
