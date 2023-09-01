@@ -1,13 +1,14 @@
+apply from: "$project.rootDir/versions.gradle"
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion versions.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 22
+        minSdkVersion versions.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 22
-        versionCode 1
+        targetSdkVersion versions.targetSdkVersion
+        versionCode versions.codeVersion
         versionName "1.0"
     }
     buildTypes {
