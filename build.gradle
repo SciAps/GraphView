@@ -8,8 +8,6 @@ android {
         minSdkVersion versions.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion versions.targetSdkVersion
-        versionCode versions.codeVersion
-        versionName "1.0"
     }
     buildTypes {
         release {
@@ -19,4 +17,5 @@ android {
     lintOptions {
         abortOnError false
     }
+    namespace 'com.jjoe64.graphview'
 }
