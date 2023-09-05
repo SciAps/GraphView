@@ -14,8 +14,8 @@ android {
             minifyEnabled false
         }
     }
-    lintOptions {
+    namespace 'com.jjoe64.graphview'
+    lint {
         abortOnError false
     }
-    namespace 'com.jjoe64.graphview'
 }
