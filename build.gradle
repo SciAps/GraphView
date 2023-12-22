@@ -1,4 +1,4 @@
-apply from: "$project.rootDir/versions.gradle"
+apply from: "$project.rootDir/libraries/DependencyVersions/versions.gradle"
 apply plugin: 'com.android.library'
 
 android {
@@ -8,15 +8,14 @@ android {
         minSdkVersion versions.minSdkVersion
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion versions.targetSdkVersion
-        versionCode versions.codeVersion
-        versionName "1.0"
     }
     buildTypes {
         release {
             minifyEnabled false
         }
     }
-    lintOptions {
+    namespace 'com.jjoe64.graphview'
+    lint {
         abortOnError false
     }
 }
