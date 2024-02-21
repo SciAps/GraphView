@@ -323,13 +323,14 @@ public class Viewport
 
             // --- horizontal scaling ---
             float scaleSpanX;
-            if (scalableY)
-            {
-                scaleSpanX = detector.getCurrentSpanX() / detector.getPreviousSpanX();
-            }
-            else
-            {
-                scaleSpanX = detector.getScaleFactor();
+            float initialFactor = 1.0f;
+            float minimalFactor = 0.025f;
+
+            scaleSpanX = detector.getScaleFactor();
+            if (scalableY) {
+                if(_scaleSpanX / scaleSpanX <= minimalFactor || _scaleSpanX / scaleSpanX >= initialFactor) {
+                    return false;
+                }
             }
             scaleX(scaleSpanX);
 
