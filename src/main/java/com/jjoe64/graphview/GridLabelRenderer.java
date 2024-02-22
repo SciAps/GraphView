@@ -1170,7 +1170,7 @@ public class GridLabelRenderer {
             mPaintAxisTitle.setColor(getHorizontalAxisTitleColor());
             mPaintAxisTitle.setTextSize(getHorizontalAxisTitleTextSize());
             float x = canvas.getWidth() / 2;
-            float y = canvas.getHeight() - 2; // The magic number to adjust the horizontal title's bottom padding
+            float y = canvas.getHeight() - 4; // The magic number to adjust the horizontal title's bottom padding
             canvas.drawText(mHorizontalAxisTitle, x, y, mPaintAxisTitle);
         }
     }
