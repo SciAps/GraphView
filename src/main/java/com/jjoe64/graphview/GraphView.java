@@ -167,6 +167,8 @@ public class GraphView extends View {
 
     private boolean mIsCursorMode;
 
+    private float mScaleFactor;
+
     /**
      * paint for the preview (in the SDK)
      */
@@ -320,6 +322,14 @@ public class GraphView extends View {
      */
     public void setOnGraphViewListener(OnGraphViewListener listener) {
         mOnGraphViewListener = listener;
+    }
+
+    public void setScaleFactor(float scale) {
+        mScaleFactor = scale;
+    }
+
+    public float getScaleFactor() {
+        return mScaleFactor;
     }
 
     /**
