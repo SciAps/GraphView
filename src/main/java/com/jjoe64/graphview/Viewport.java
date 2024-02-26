@@ -134,6 +134,7 @@ public class Viewport
     public void scaleX(final float scaleSpanX)
     {
         _scaleSpanX /= scaleSpanX;
+        mGraphView.setScaleFactor(_scaleSpanX);
 
         double viewportWidth = mCurrentViewport.width();
 
@@ -328,7 +329,10 @@ public class Viewport
 
             scaleSpanX = detector.getScaleFactor();
             if (scalableY) {
-                if(_scaleSpanX / scaleSpanX <= minimalFactor || _scaleSpanX / scaleSpanX >= initialFactor) {
+                if(_scaleSpanX / scaleSpanX < minimalFactor) {
+                    return false;
+                } else if(_scaleSpanX / scaleSpanX >= initialFactor) {
+                    _scaleSpanX = initialFactor;
                     return false;
                 }
             }
@@ -831,7 +835,7 @@ public class Viewport
                 mIsFirstScrollEvent = true;
             }
         }
-        return b;
+        return false;
     }
 
     /**
