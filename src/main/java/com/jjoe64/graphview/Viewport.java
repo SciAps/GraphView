@@ -834,8 +834,11 @@ public class Viewport
                 // Used to ignore the first scroll event with bad distanceX
                 mIsFirstScrollEvent = true;
             }
+
+            b = false;
         }
-        return false;
+
+        return b;
     }
 
     /**
