@@ -4,11 +4,6 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion versions.compileSdkVersion
 
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
-    }
     namespace 'com.jjoe64.graphview'
     lint {
         abortOnError false
