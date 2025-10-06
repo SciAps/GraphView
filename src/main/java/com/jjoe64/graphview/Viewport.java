@@ -336,6 +336,15 @@ public class Viewport
                     return false;
                 }
             }
+
+            // enforce minimum visible X-span
+            double minSpanX = 20.0;
+            double currentWidth = mCurrentViewport.width();
+            double targetWidth = currentWidth / scaleSpanX;
+            if (targetWidth < minSpanX) {
+                scaleSpanX = (float) (currentWidth / minSpanX);
+            }
+
             scaleX(scaleSpanX);
 
             // --- vertical scaling ---
