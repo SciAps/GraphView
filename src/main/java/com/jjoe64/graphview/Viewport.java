@@ -338,7 +338,7 @@ public class Viewport
             }
 
             // enforce minimum visible X-span
-            if (mMinVisibleXSpan != Double.MAX_VALUE) {
+            if (mMinVisibleXSpan != -1) {
                 double currentWidth = mCurrentViewport.width();
                 double targetWidth = currentWidth / scaleSpanX;
                 if (targetWidth < mMinVisibleXSpan) {
@@ -790,7 +790,7 @@ public class Viewport
      *
      * @param graphView graphview
      */
-    private double mMinVisibleXSpan = Double.MAX_VALUE;
+    private double mMinVisibleXSpan = -1;
 
     Viewport(GraphView graphView)
     {
