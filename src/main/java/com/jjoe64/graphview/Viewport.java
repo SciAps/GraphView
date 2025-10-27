@@ -338,13 +338,13 @@ public class Viewport
             }
 
             // enforce minimum visible X-span
-            double minSpanX = 20.0;
-            double currentWidth = mCurrentViewport.width();
-            double targetWidth = currentWidth / scaleSpanX;
-            if (targetWidth < minSpanX) {
-                scaleSpanX = (float) (currentWidth / minSpanX);
+            if (mMinVisibleXSpan != -1) {
+                double currentWidth = mCurrentViewport.width();
+                double targetWidth = currentWidth / scaleSpanX;
+                if (targetWidth < mMinVisibleXSpan) {
+                    scaleSpanX = (float) (currentWidth / mMinVisibleXSpan);
+                }
             }
-
             scaleX(scaleSpanX);
 
             // --- vertical scaling ---
@@ -790,6 +790,8 @@ public class Viewport
      *
      * @param graphView graphview
      */
+    private double mMinVisibleXSpan = -1;
+
     Viewport(GraphView graphView)
     {
         mScroller = new OverScroller(graphView.getContext());
@@ -1649,5 +1651,9 @@ public class Viewport
     public void setMinimalViewport(double minX, double maxX, double minY, double maxY)
     {
         mMinimalViewport.set(minX, maxY, maxX, minY);
+    }
+
+    public void setMinVisibleXSpan(double minVisibleXSpan) {
+        mMinVisibleXSpan = minVisibleXSpan;
     }
 }
